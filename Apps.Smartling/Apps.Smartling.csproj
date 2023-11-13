@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Product>Smartling</Product>
+        <Description>Cloud-based translation management platform that helps businesses efficiently translate and localize content, optimizing global communication strategies through automation and centralized management</Description>
+        <Version>1.0.0</Version>
+        <AssemblyName>Apps.Smartling</AssemblyName>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Blackbird.Applications.Sdk.Common" Version="2.3.1" />
+      <PackageReference Include="Blackbird.Applications.Sdk.Utils" Version="1.0.13" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource CopyToOutputDirectory="Always" Include="image\icon.png"></EmbeddedResource>
+    </ItemGroup>
+
+</Project>
