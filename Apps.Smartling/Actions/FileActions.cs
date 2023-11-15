@@ -2,6 +2,7 @@
 using Apps.Smartling.Models;
 using Apps.Smartling.Models.Dtos;
 using Apps.Smartling.Models.Dtos.Files;
+using Apps.Smartling.Models.Dtos.Jobs;
 using Apps.Smartling.Models.Identifiers;
 using Apps.Smartling.Models.Requests.Files;
 using Apps.Smartling.Models.Responses;
@@ -135,6 +136,16 @@ public class FileActions : SmartlingInvocable
         
         fileUri = getTargetFileDataResponse.Response.Data.Items.First().TargetFiles.First().TargetFileUri;
 
+        var locales = targetLocales.TargetLocaleIds;
+
+        if (locales == null)
+        {
+            var getJobRequest = new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}", 
+                Method.Get);
+            var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<JobDto>>(getJobRequest);
+            locales = response.Response.Data.TargetLocaleIds;
+        }
+        
         var addFileToJobRequest = 
             new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}/file/add", 
                 Method.Post);
@@ -142,7 +153,7 @@ public class FileActions : SmartlingInvocable
         addFileToJobRequest.AddJsonBody(new
         {
             fileUri,
-            targetLocaleIds = targetLocales.TargetLocaleIds
+            targetLocaleIds = locales
         });
 
         await Client.ExecuteWithErrorHandling(addFileToJobRequest);
