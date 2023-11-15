@@ -49,7 +49,7 @@ public class JobActions : SmartlingInvocable
             referenceNumber = input.ReferenceNumber,
             callbackUrl = input.CallbackUrl ??
                           $"{InvocationContext.UriInfo.BridgeServiceUrl.ToString().TrimEnd('/')}{ApplicationConstants.SmartlingBridgePath}"
-                              .SetQueryParameter("projectId", ProjectId),
+                              .SetQueryParameter("id", ProjectId),
             callbackMethod = input.CallbackMethod ?? "POST"
         });
 

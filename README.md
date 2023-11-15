@@ -31,12 +31,12 @@ Before you can connect you need to make sure that:
 ### Jobs
 
 - **Get job** gets the details of a job such as job name, description, due date, and reference number.
-- **Create job** creates a new job.
+- **Create job** creates a new job. Leave the _Callback URL_ and _Callback method_ parameters unspecified if you intend to use **On job completed** and/or **On job cancelled** events.
 - **Add locale to job** adds a locale to a job. Set _Sync content_ parameter to _false_ to add only a locale placeholder to the job without including all content from the job for the new locale.
 - **Authorize job** authorizes all content within a job. A job can only be authorized when it has content and is in an _Awaiting Authorization (AWAITING_AUTHORIZATION)_ state. You can specify target locales and workflow for authorization. Either both the target locales and workflow should be specified, or none of them should be specified. If they are not specified, Smartling will authorize the job for the default workflows for the given project.  
 - **Close job** closes a completed job. In order for a job to be closed, it must be in a completed state. All content from the job will be removed when it is closed. Closing a job guarantees that no additional work will be done against the job.
 - **Cancel job** cancels a job. All content within the job will be removed from the job and the content will be unauthorized.
-- **Update job** updates the attributes of the job, such as job name, description, due date, and reference number. Specify only attributes that need to be updated. Job can be edited only in _Draft (DRAFT)_, _Awaiting Authorization (AWAITING_AUTHORIZATION)_, _In Progress (IN_PROGRESS)_, _Completed (COMPLETED)_ statuses.
+- **Update job** updates the attributes of the job, such as job name, description, due date, and reference number. Specify only attributes that need to be updated. Job can be edited only in _Draft (DRAFT)_, _Awaiting Authorization (AWAITING_AUTHORIZATION)_, _In Progress (IN_PROGRESS)_, _Completed (COMPLETED)_ statuses. Leave the _Callback URL_ and _Callback method_ parameters unspecified if you intend to use **On job completed** and/or **On job cancelled** events.
 - **Delete job** deletes a job. Only job that is in _Cancelled (CANCELLED)_ status can be deleted.
 
 ### Job files
@@ -47,6 +47,11 @@ Before you can connect you need to make sure that:
 - **Download translated file** downloads translated file for a single locale.
 - **Download file translations** downloads all translations for the requested file as separate files.
 - **Download file translations in ZIP archive**.
+
+## Events
+
+- **On job completed** and **On job completed (manual)** are triggered when a job is completed, signifying that all authorized content in a job, for all locales, has reached the _Published_ step of the workflow.
+- **On job cancelled** and **On job cancelled (manual)** are triggered when a job is cancelled.
 
 ## Missing features
 
