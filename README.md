@@ -47,6 +47,7 @@ Before you can connect you need to make sure that:
 - **Download translated file** downloads translated file for a single locale.
 - **Download file translations** downloads all translations for the requested file as separate files.
 - **Download file translations in ZIP archive**.
+- **Import translation** imports a translated file. This action supports a limited range of file types. You can find information about supported file types and file preparation [here](https://help.smartling.com/hc/en-us/articles/360008031794-Importing-Translated-Files).
 
 ## Events
 

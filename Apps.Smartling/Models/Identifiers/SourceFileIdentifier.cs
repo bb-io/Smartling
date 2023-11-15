@@ -4,9 +4,9 @@ using Blackbird.Applications.Sdk.Common.Dynamic;
 
 namespace Apps.Smartling.Models.Identifiers;
 
-public class FileIdentifier
+public class SourceFileIdentifier
 {
-    [Display("File")]
+    [Display("Source file")]
     [DataSource(typeof(FileDataSourceHandler))]
     public string FileUri { get; set; }
 }

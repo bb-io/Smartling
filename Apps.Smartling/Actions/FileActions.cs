@@ -3,6 +3,7 @@ using Apps.Smartling.Models;
 using Apps.Smartling.Models.Dtos;
 using Apps.Smartling.Models.Dtos.Files;
 using Apps.Smartling.Models.Identifiers;
+using Apps.Smartling.Models.Requests.Files;
 using Apps.Smartling.Models.Responses;
 using Apps.Smartling.Models.Responses.Files;
 using Blackbird.Applications.Sdk.Common;
@@ -33,7 +34,7 @@ public class FileActions : SmartlingInvocable
     }
 
     [Action("Download source file", Description = "Download source file.")]
-    public async Task<FileWrapper> DownloadSourceFile([ActionParameter] FileIdentifier fileIdentifier)
+    public async Task<FileWrapper> DownloadSourceFile([ActionParameter] SourceFileIdentifier fileIdentifier)
     {
         var endpoint = $"/files-api/v2/projects/{ProjectId}/file?fileUri={fileIdentifier.FileUri}";
         var file = await DownloadFile(endpoint);
@@ -41,7 +42,7 @@ public class FileActions : SmartlingInvocable
     }
 
     [Action("Download translated file", Description = "Download translated file for a single locale.")]
-    public async Task<FileWrapper> DownloadTranslatedFile([ActionParameter] FileIdentifier fileIdentifier,
+    public async Task<FileWrapper> DownloadTranslatedFile([ActionParameter] SourceFileIdentifier fileIdentifier,
         [ActionParameter] TargetLocaleIdentifier targetLocale)
     {
         var endpoint =
@@ -52,7 +53,7 @@ public class FileActions : SmartlingInvocable
     }
     
     [Action("Download file translations", Description = "Download all translations for the requested file.")]
-    public async Task<DownloadFilesResponse> DownloadFileTranslations([ActionParameter] FileIdentifier fileIdentifier)
+    public async Task<DownloadFilesResponse> DownloadFileTranslations([ActionParameter] SourceFileIdentifier fileIdentifier)
     {
         var endpoint = $"/files-api/v2/projects/{ProjectId}/locales/all/file/zip?fileUri={fileIdentifier.FileUri}";
         var zip = await DownloadFile(endpoint);
@@ -72,7 +73,7 @@ public class FileActions : SmartlingInvocable
 
     [Action("Download file translations in ZIP archive", Description = "Download a ZIP archive with all translations " +
                                                                        "for the requested file.")]
-    public async Task<FileWrapper> DownloadFileTranslationsAsZip([ActionParameter] FileIdentifier fileIdentifier,
+    public async Task<FileWrapper> DownloadFileTranslationsAsZip([ActionParameter] SourceFileIdentifier fileIdentifier,
         [ActionParameter] [Display("Output ZIP filename")] string? zipFilename)
     {
         var endpoint = $"/files-api/v2/projects/{ProjectId}/locales/all/file/zip?fileUri={fileIdentifier.FileUri}";
@@ -109,7 +110,30 @@ public class FileActions : SmartlingInvocable
         [ActionParameter] FileWrapper file, [ActionParameter] TargetLocalesIdentifier targetLocales)
     {
         var fileUri = file.File.Name;
-        fileUri = await UploadFile(file.File, fileUri);
+        var fileType = GetFileType(file.File.Name);
+        var getTargetFileDataRequest =
+            new SmartlingRequest($"/files-api/v2/projects/{ProjectId}/target-file-types", Method.Post);
+        getTargetFileDataRequest.AddJsonBody(new
+        {
+            sourceFiles = new[]
+            {
+                new
+                {
+                    sourceFileUri = fileUri,
+                    sourceFileType = fileType
+                }
+            }
+        });
+        var getTargetFileDataResponse =
+            await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<TargetFileDtoWrapper>>>(getTargetFileDataRequest);
+        
+        var uploadFileRequest = new SmartlingRequest($"/files-api/v2/projects/{ProjectId}/file", Method.Post);
+        uploadFileRequest.AddFile("file", file.File.Bytes, file.File.Name);
+        uploadFileRequest.AddParameter("fileUri", fileUri);
+        uploadFileRequest.AddParameter("fileType", fileType);
+        await Client.ExecuteWithErrorHandling(uploadFileRequest);
+        
+        fileUri = getTargetFileDataResponse.Response.Data.Items.First().TargetFiles.First().TargetFileUri;
 
         var addFileToJobRequest = 
             new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}/file/add", 
@@ -125,11 +149,31 @@ public class FileActions : SmartlingInvocable
         return jobIdentifier;
     }
     
-    #region Post utils
-    
-    private async Task<string> UploadFile(File file, string fileUri)
+    [Action("Import translation", Description = "Import a translated file.")]
+    public async Task<ImportTranslationResponse> ImportTranslation([ActionParameter] FileWrapper file, 
+        [ActionParameter] TargetLocaleIdentifier targetLocale, [ActionParameter] SourceFileIdentifier fileIdentifier,
+        [ActionParameter] ImportTranslationRequest input)
     {
-        var extension = Path.GetExtension(file.Name).TrimStart('.');
+        var fileType = GetFileType(file.File.Name);
+        var request = new SmartlingRequest($"/files-api/v2/projects/{ProjectId}/locales/{targetLocale.TargetLocaleId}/file/import", 
+            Method.Post);
+        request.AddFile("file", file.File.Bytes, file.File.Name);
+        request.AddParameter("fileUri", fileIdentifier.FileUri);
+        request.AddParameter("fileType", fileType);
+        request.AddParameter("translationState", input.TranslationState);
+
+        if (input.Overwrite != null)
+            request.AddParameter("overwrite", input.Overwrite.Value);
+        
+        var result = await Client.ExecuteWithErrorHandling<ResponseWrapper<ImportTranslationResponse>>(request);
+        return result.Response.Data;
+    }
+
+    #region Post utils
+
+    private string GetFileType(string filename)
+    {
+        var extension = Path.GetExtension(filename).TrimStart('.');
         string fileType;
 
         switch (extension)
@@ -158,36 +202,17 @@ public class FileActions : SmartlingInvocable
             case "xlf":
                 fileType = "xliff";
                 break;
+            case "ts":
+                fileType = "qt";
+                break;
             default:
                 fileType = extension;
                 break;
         }
 
-        var getTargetFileDataRequest =
-            new SmartlingRequest($"/files-api/v2/projects/{ProjectId}/target-file-types", Method.Post);
-        getTargetFileDataRequest.AddJsonBody(new
-        {
-            sourceFiles = new[]
-            {
-                new
-                {
-                    sourceFileUri = fileUri,
-                    sourceFileType = fileType
-                }
-            }
-        });
-        var getTargetFileDataResponse =
-            await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<TargetFileDtoWrapper>>>(getTargetFileDataRequest);
-        
-        var request = new SmartlingRequest($"/files-api/v2/projects/{ProjectId}/file", Method.Post);
-        request.AddFile("file", file.Bytes, file.Name);
-        request.AddParameter("fileUri", fileUri);
-        request.AddParameter("fileType", fileType);
-        await Client.ExecuteWithErrorHandling(request);
-        
-        return getTargetFileDataResponse.Response.Data.Items.First().TargetFiles.First().TargetFileUri;
+        return fileType;
     }
-    
+
     #endregion
 
     #endregion
