@@ -38,7 +38,7 @@ public class FileActions : SmartlingInvocable
     {
         var endpoint = $"/files-api/v2/projects/{ProjectId}/file?fileUri={fileIdentifier.FileUri}";
         var file = await DownloadFile(endpoint);
-        return new(file);
+        return new() { File = file };
     }
 
     [Action("Download translated file", Description = "Download translated file for a single locale.")]
@@ -49,7 +49,7 @@ public class FileActions : SmartlingInvocable
             $"/files-api/v2/projects/{ProjectId}/locales/{targetLocale.TargetLocaleId}/file?fileUri={fileIdentifier.FileUri}";
         var file = await DownloadFile(endpoint);
         file.Name = CreateNameForTranslatedFile(file.Name, targetLocale.TargetLocaleId);
-        return new(file);
+        return new() { File = file };
     }
     
     [Action("Download file translations", Description = "Download all translations for the requested file.")]
@@ -65,7 +65,7 @@ public class FileActions : SmartlingInvocable
             var locale = file.Path.Split("/")[0];
             var resultFilename = CreateNameForTranslatedFile(file.File.Name, locale);
             file.File.Name = resultFilename;
-            resultFiles.Add(new(file.File));
+            resultFiles.Add(new() { File = file.File });
         }
         
         return new(resultFiles);
@@ -81,7 +81,7 @@ public class FileActions : SmartlingInvocable
         zip.Name = zipFilename != null ? 
             Path.HasExtension(zipFilename) ? zipFilename : zipFilename + ".zip"
             : fileIdentifier.FileUri + ".zip";
-        return new(zip);
+        return new() { File = zip };
     }
 
     #region Get utils

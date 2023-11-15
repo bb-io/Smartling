@@ -2,4 +2,7 @@
     
 namespace Apps.Smartling.Models;
 
-public record FileWrapper(File File);
+public class FileWrapper
+{
+    public File File { get; set; }
+}
