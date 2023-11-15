@@ -119,10 +119,7 @@ public class JobActions : SmartlingInvocable
     {
         var request = new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}/cancel", 
             Method.Post);
-
-        if (reason != null)
-            request.AddJsonBody(new { reason });
-        
+        request.AddJsonBody(new { reason });
         await Client.ExecuteWithErrorHandling(request);
         return jobIdentifier;
     }
