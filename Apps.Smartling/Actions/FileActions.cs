@@ -1,4 +1,5 @@
-﻿using Apps.Smartling.Api;
+﻿using System.Net;
+using Apps.Smartling.Api;
 using Apps.Smartling.Models;
 using Apps.Smartling.Models.Dtos;
 using Apps.Smartling.Models.Dtos.Files;
@@ -25,7 +26,7 @@ public class FileActions : SmartlingInvocable
 
     #region Get
 
-    [Display("List files within job", Description = "List all files within a job.")]
+    [Action("List files within job", Description = "List all files within a job.")]
     public async Task<ListFilesResponse> ListFilesWithinJob([ActionParameter] JobIdentifier jobIdentifier)
     {
         var request = new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}/files", 
@@ -107,7 +108,7 @@ public class FileActions : SmartlingInvocable
     #region Post
 
     [Action("Upload source file to job", Description = "Add all non-published strings from a file to a job.")]
-    public async Task<JobIdentifier> AddFileToJob([ActionParameter] JobIdentifier jobIdentifier, 
+    public async Task<SourceFileIdentifier> AddFileToJob([ActionParameter] JobIdentifier jobIdentifier, 
         [ActionParameter] FileWrapper file, [ActionParameter] TargetLocalesIdentifier targetLocales)
     {
         var fileUri = file.File.Name;
@@ -133,8 +134,17 @@ public class FileActions : SmartlingInvocable
         uploadFileRequest.AddParameter("fileUri", fileUri);
         uploadFileRequest.AddParameter("fileType", fileType);
         await Client.ExecuteWithErrorHandling(uploadFileRequest);
-        
+
         fileUri = getTargetFileDataResponse.Response.Data.Items.First().TargetFiles.First().TargetFileUri;
+
+        RestResponse getFileStatusResponse;
+
+        do
+        {
+            var getFileStatusRequest =
+                new SmartlingRequest($"/files-api/v2/projects/{ProjectId}/file/status?fileUri={fileUri}", Method.Get);
+            getFileStatusResponse = await Client.ExecuteAsync(getFileStatusRequest);
+        } while (getFileStatusResponse.StatusCode != HttpStatusCode.OK);
 
         var locales = targetLocales.TargetLocaleIds;
 
@@ -157,7 +167,7 @@ public class FileActions : SmartlingInvocable
         });
 
         await Client.ExecuteWithErrorHandling(addFileToJobRequest);
-        return jobIdentifier;
+        return new SourceFileIdentifier { FileUri = fileUri };
     }
     
     [Action("Import translation", Description = "Import a translated file.")]

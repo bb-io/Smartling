@@ -4,9 +4,9 @@ using Blackbird.Applications.Sdk.Common.Dynamic;
 
 namespace Apps.Smartling.Models.Identifiers;
 
-public class SourceFileIdentifier
+public class JobAttachmentIdentifier
 {
-    [Display("Source file URI")]
-    [DataSource(typeof(FileDataSourceHandler))]
-    public string FileUri { get; set; }
+    [Display("Attachment")]
+    [DataSource(typeof(JobAttachmentDataSourceHandler))]
+    public string AttachmentUid { get; set; }
 }
