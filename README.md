@@ -49,6 +49,12 @@ Before you can connect you need to make sure that:
 - **Download file translations in ZIP archive**.
 - **Import translation** imports a translated file. This action supports a limited range of file types. You can find information about supported file types and file preparation [here](https://help.smartling.com/hc/en-us/articles/360008031794-Importing-Translated-Files).
 
+### Job attachments
+
+- **List files attached to job**.
+- **Upload attachment to job**.
+- **Download file attached to job**.
+
 ## Events
 
 - **On job completed** and **On job completed (manual)** are triggered when a job is completed, signifying that all authorized content in a job, for all locales, has reached the _Published_ step of the workflow.
@@ -60,7 +66,6 @@ Before you can connect you need to make sure that:
 - Strings
 - Tags
 - Reports
-- Attachments
 - Translation quality checks
 - Glossaries
 - File Machine Translations
