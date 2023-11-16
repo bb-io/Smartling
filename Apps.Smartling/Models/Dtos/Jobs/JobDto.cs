@@ -25,6 +25,7 @@ public class JobDto
     [Display("Reference number")]
     public string? ReferenceNumber { get; set; }
     
+    [Display("Source files")]
     public IEnumerable<SourceFileDto>? SourceFiles { get; set; }
 
     [Display("Callback URL")]
@@ -57,5 +58,6 @@ public class JobDto
     [Display("Last authorized date")]
     public DateTime? LastAuthorizedDate { get; set; }
     
+    [Display("Custom fields")]
     public IEnumerable<CustomFieldDto>? CustomFields { get; set; }
 }

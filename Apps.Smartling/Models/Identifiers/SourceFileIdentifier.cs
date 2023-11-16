@@ -6,7 +6,7 @@ namespace Apps.Smartling.Models.Identifiers;
 
 public class SourceFileIdentifier
 {
-    [Display("Source file")]
+    [Display("Source file URI")]
     [DataSource(typeof(FileDataSourceHandler))]
     public string FileUri { get; set; }
 }

@@ -6,6 +6,7 @@ public class SourceFileDto
 {
     public string Name { get; set; }
     
+    [Display("File URI")]
     public string Uri { get; set; }
     
     [Display("File unique identifier")]
