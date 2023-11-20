@@ -26,7 +26,7 @@ public class FileActions : SmartlingInvocable
 
     #region Get
 
-    [Action("List files within job", Description = "List all files within a job.")]
+    [Action("List source files within job", Description = "List all source files within a job.")]
     public async Task<ListFilesResponse> ListFilesWithinJob([ActionParameter] JobIdentifier jobIdentifier)
     {
         var request = new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}/files", 
