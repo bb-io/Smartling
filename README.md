@@ -42,7 +42,7 @@ Before you can connect you need to make sure that:
 ### Job files
 
 - **Upload source file to job** adds all non-published strings from a file to a job. The file will be added for all locales of the job if _Target locales_ parameter is not specified.
-- **List files within job** lists all files within a job.
+- **List source files within job** lists all source files within a job.
 - **Download source file**.
 - **Download translated file** downloads translated file for a single locale.
 - **Download file translations** downloads all translations for the requested file as separate files.
@@ -55,15 +55,27 @@ Before you can connect you need to make sure that:
 - **Upload attachment to job**.
 - **Download file attached to job**.
 
+### Strings
+
+- **Add string to project** uploads a string to a project. There are optional _Placeholder format_ and _Custom placeholder format (Java Regular Expression)_ parameters which are used to specify a standard or custom placeholder format. Placeholders are words in a string that should not be translated. They represent dynamic variable content. You can read more about placeholders [here](https://help.smartling.com/hc/en-us/articles/360008143433). Optional _Namespace_ parameter is used to generate the unique hashcode for a given string. If you want to have two versions of a string with the same text and variant metadata, you can keep them unique by assigning a different namespace to each string. Optional _Maximum character length_ parameter can be used to set the maximum character length recommended for this string and its translations. Leave the _Callback URL_ and _Callback method_ parameters unspecified if you intend to use **On string translation published** event.
+- **Add string to job** adds a string to a job. In order to be able to add a string to a job, it first needs to be added to project via **Add string to project** action. A string for a locale can only be in one job. If the string identified in the request is already in a job for a locale then it won't be added. However, if you set _Move enabled_ to _True_, the string will be moved into the specified job.
+- **Remove string from job**.
+- **List all source strings for file**.
+- **Get source string by hashcode** retrieves a single source string with a specified hashcode, which is the unique identifier for the string.
+- **List translations for strings in file**.
+- **List translations for string by hashcode**.
+
+**Note**: A string added with **Add string to project** action can be authorized by a content owner in the Smartling Dashboard. Another way to authorize the string is to add it to a job with **Add string to job** action and then authorize the job with **Authorize job** action.
+
 ## Events
 
 - **On job completed** and **On job completed (manual)** are triggered when a job is completed, signifying that all authorized content in a job, for all locales, has reached the _Published_ step of the workflow.
 - **On job cancelled** and **On job cancelled (manual)** are triggered when a job is cancelled.
+- **On string translation published** and **On string translation published (manual)** are triggered when a string translation is published for a locale.
 
 ## Missing features
 
 - Issues
-- Strings
 - Tags
 - Reports
 - Translation quality checks

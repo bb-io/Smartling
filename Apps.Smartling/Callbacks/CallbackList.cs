@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using Apps.Smartling.Callbacks.Handlers;
 using Apps.Smartling.Callbacks.Models.Payload.Jobs;
+using Apps.Smartling.Callbacks.Models.Payload.Strings;
 using Blackbird.Applications.Sdk.Common.Webhooks;
 using Newtonsoft.Json;
 
@@ -20,7 +21,12 @@ public class CallbackList
         Description = "This event is triggered when a job is cancelled.")]
     public Task<WebhookResponse<JobCancelledPayload>> OnJobCancelled(WebhookRequest request) 
         => HandleCallback<JobCancelledPayload>(request);
-    
+
+    [Webhook("On string translation published", typeof(StringPublishedCallbackHandler),
+        Description = "This event is triggered when a string translation is published for a locale.")]
+    public Task<WebhookResponse<StringPublishedPayload>> OnStringPublished(WebhookRequest request)
+        => HandleCallback<StringPublishedPayload>(request);
+
     #endregion
 
     #region Manual callbacks
@@ -32,6 +38,11 @@ public class CallbackList
     [Webhook("On job cancelled (manual)", Description = "This manual event is triggered when a job is cancelled.")]
     public Task<WebhookResponse<JobCancelledPayload>> OnJobCancelledManual(WebhookRequest request) 
         => HandleCallback<JobCancelledPayload>(request);
+    
+    [Webhook("On string translation published (manual)", 
+        Description = "This manual event is triggered when a string translation is published for a locale.")]
+    public Task<WebhookResponse<StringPublishedPayload>> OnStringPublishedManual(WebhookRequest request)
+        => HandleCallback<StringPublishedPayload>(request);
 
     #endregion
 
@@ -39,7 +50,7 @@ public class CallbackList
     {
         var payload = JsonConvert.DeserializeObject<T>(request.Body.ToString(),
             new JsonSerializerSettings { MissingMemberHandling = MissingMemberHandling.Ignore });
-
+        
         return Task.FromResult(new WebhookResponse<T>
         {
             HttpResponseMessage = new HttpResponseMessage(statusCode: HttpStatusCode.OK),
