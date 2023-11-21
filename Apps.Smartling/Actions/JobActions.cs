@@ -80,15 +80,30 @@ public class JobActions : SmartlingInvocable
     public async Task<JobIdentifier> AuthorizeJob([ActionParameter] JobIdentifier jobIdentifier, 
         [ActionParameter] TargetLocalesIdentifier targetLocales, [ActionParameter] WorkflowIdentifier workflowIdentifier)
     {
-        var request = new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}/authorize", 
-            Method.Post);
-
         if ((targetLocales.TargetLocaleIds != null && workflowIdentifier.WorkflowUid == null)
             || (targetLocales.TargetLocaleIds == null && workflowIdentifier.WorkflowUid != null))
             throw new Exception("Please specify both target locales and workflow or leave both unspecified.");
 
+        for (var i = 0; i < 6; i++)
+        {
+            var getJobRequest = 
+                new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}", 
+                    Method.Get);
+            var getJobResponse = await Client.ExecuteWithErrorHandling<ResponseWrapper<JobDto>>(getJobRequest);
+            var job = getJobResponse.Response.Data;
+
+            if (job.JobStatus != "AWAITING_AUTHORIZATION")
+                await Task.Delay(TimeSpan.FromSeconds(10));
+            else
+                break;
+        }
+
+        var authorizeJobRequest = 
+            new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}/authorize", 
+                Method.Post);
+
         if (targetLocales.TargetLocaleIds == null)
-            request.AddJsonBody(new { });
+            authorizeJobRequest.AddJsonBody(new { });
         else
         {
             var localeWorkflows = targetLocales.TargetLocaleIds.Select(locale => new
@@ -97,10 +112,10 @@ public class JobActions : SmartlingInvocable
                 workflowUid = workflowIdentifier.WorkflowUid
             });
             
-            request.AddJsonBody(new { localeWorkflows });
+            authorizeJobRequest.AddJsonBody(new { localeWorkflows });
         }
         
-        await Client.ExecuteWithErrorHandling(request);
+        await Client.ExecuteWithErrorHandling(authorizeJobRequest);
         return jobIdentifier;
     }
 
