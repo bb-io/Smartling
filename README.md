@@ -31,6 +31,7 @@ Before you can connect you need to make sure that:
 ### Jobs
 
 - **Get job** gets the details of a job such as job name, description, due date, and reference number.
+- **Search jobs** lists jobs that match the specified filter options. If no parameters are specified, all jobs will be returned.
 - **Create job** creates a new job. Leave the _Callback URL_ and _Callback method_ parameters unspecified if you intend to use **On job completed** and/or **On job cancelled** events.
 - **Add locale to job** adds a locale to a job. Set _Sync content_ parameter to _false_ to add only a locale placeholder to the job without including all content from the job for the new locale.
 - **Authorize job** authorizes all content within a job. A job can only be authorized when it has content and is in an _Awaiting Authorization (AWAITING_AUTHORIZATION)_ state. You can specify target locales and workflow for authorization. Either both the target locales and workflow should be specified, or none of them should be specified. If they are not specified, Smartling will authorize the job for the default workflows for the given project.  

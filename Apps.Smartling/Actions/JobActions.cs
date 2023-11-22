@@ -1,9 +1,11 @@
 ﻿using Apps.Smartling.Api;
 using Apps.Smartling.Constants;
+using Apps.Smartling.Models.Dtos;
 using Apps.Smartling.Models.Dtos.Jobs;
 using Apps.Smartling.Models.Identifiers;
 using Apps.Smartling.Models.Requests.Jobs;
 using Apps.Smartling.Models.Responses;
+using Apps.Smartling.Models.Responses.Jobs;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Invocation;
@@ -29,6 +31,34 @@ public class JobActions : SmartlingInvocable
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<JobDto>>(request);
         var job = response.Response.Data;
         return job;
+    }
+
+    [Action("Search jobs", Description = "List jobs that match the specified filter options. If no parameters are " +
+                                         "specified, all jobs will be returned.")]
+    public async Task<SearchJobsResponse> SearchJobs([ActionParameter] SearchJobsRequest input)
+    {
+        var translationJobStatus = input.TranslationJobStatus == null ? "" : string.Join(",", input.TranslationJobStatus);
+        var request =
+            new SmartlingRequest(
+                $"/jobs-api/v3/projects/{ProjectId}/jobs?translationJobStatus={translationJobStatus}&limit={input.Limit}",
+                Method.Get);
+
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<JobDto>>>(request);
+        var jobs = response.Response.Data.Items;
+
+        if (input.CreatedDateBefore != null)
+            jobs = jobs.Where(job => job.CreatedDate <= input.CreatedDateBefore);
+        
+        if (input.CreatedDateAfter != null)
+            jobs = jobs.Where(job => job.CreatedDate >= input.CreatedDateAfter);
+        
+        if (input.DueDateBefore != null)
+            jobs = jobs.Where(job => job.DueDate <= input.DueDateBefore);
+        
+        if (input.DueDateAfter != null)
+            jobs = jobs.Where(job => job.DueDate >= input.DueDateAfter);
+
+        return new(jobs);
     }
 
     #endregion
