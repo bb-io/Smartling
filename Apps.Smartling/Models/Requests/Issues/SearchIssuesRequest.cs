@@ -23,15 +23,15 @@ public class SearchIssuesRequest
     
     public bool? Reopened { get; set; } 
     
-    [Display("Issue severity level codes")]
+    [Display("Issue severity levels")]
     [DataSource(typeof(IssueSeverityLevelCodeDataSourceHandler))]
     public IEnumerable<string>? IssueSeverityLevelCodes { get; set; }
     
-    [Display("Issue state code")]
+    [Display("Issue state")]
     [DataSource(typeof(IssueStateCodeDataSourceHandler))]
     public string? IssueStateCode { get; set; }
     
-    [Display("Issue type codes")]
+    [Display("Issue type")]
     [DataSource(typeof(IssueTypeCodeDataSourceHandler))]
     public string? IssueTypeCode { get; set; }
 
