@@ -67,6 +67,15 @@ Before you can connect you need to make sure that:
 
 **Note**: A string added with **Add string to project** action can be authorized by a content owner in the Smartling Dashboard. Another way to authorize the string is to add it to a job with **Add string to job** action and then authorize the job with **Authorize job** action.
 
+### Issues
+
+- **Get issue** retrieves detailed information about a single issue.
+- **Search issues** lists issues that match the specified filter options. If no parameters are specified, all issues will be returned.
+- **Create issue** creates a new issue for a string. Maximum length of _Issue text_ is 4000 characters. _Target language_ parameter is required for issues of the _Translation_ type. 
+- **Edit issue**. Specify only fields that need to be updated. Maximum length of _Issue text_ is 4000 characters. _Target language_ parameter is required when updating an issue to have the _Translation_ type. _Issue subtype_ parameter is required when updating _Issue type_.
+- **Open issue** sets the state of an issue to _Opened_.
+- **Close issue** sets the state of an issue to _Resolved_.
+
 ## Events
 
 - **On job completed** and **On job completed (manual)** are triggered when a job is completed, signifying that all authorized content in a job, for all locales, has reached the _Published_ step of the workflow.
@@ -75,7 +84,7 @@ Before you can connect you need to make sure that:
 
 ## Missing features
 
-- Issues
+- Issue comments
 - Tags
 - Reports
 - Translation quality checks

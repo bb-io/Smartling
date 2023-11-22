@@ -10,3 +10,11 @@ public class TargetLocaleIdentifier
     [DataSource(typeof(TargetLocaleDataSourceHandler))]
     public string TargetLocaleId { get; set; }
 }
+
+public class TargetLocaleOptionalIdentifier
+{
+    [Display("Target locale")]
+    [DataSource(typeof(TargetLocaleDataSourceHandler))]
+    public string? TargetLocaleId { get; set; }
+}
+
