@@ -31,6 +31,7 @@ Before you can connect you need to make sure that:
 ### Jobs
 
 - **Get job** gets the details of a job such as job name, description, due date, and reference number.
+- **Search jobs** lists jobs that match the specified filter options. If no parameters are specified, all jobs will be returned.
 - **Create job** creates a new job. Leave the _Callback URL_ and _Callback method_ parameters unspecified if you intend to use **On job completed** and/or **On job cancelled** events.
 - **Add locale to job** adds a locale to a job. Set _Sync content_ parameter to _false_ to add only a locale placeholder to the job without including all content from the job for the new locale.
 - **Authorize job** authorizes all content within a job. A job can only be authorized when it has content and is in an _Awaiting Authorization (AWAITING_AUTHORIZATION)_ state. You can specify target locales and workflow for authorization. Either both the target locales and workflow should be specified, or none of them should be specified. If they are not specified, Smartling will authorize the job for the default workflows for the given project.  
@@ -67,6 +68,15 @@ Before you can connect you need to make sure that:
 
 **Note**: A string added with **Add string to project** action can be authorized by a content owner in the Smartling Dashboard. Another way to authorize the string is to add it to a job with **Add string to job** action and then authorize the job with **Authorize job** action.
 
+### Issues
+
+- **Get issue** retrieves detailed information about a single issue.
+- **Search issues** lists issues that match the specified filter options. If no parameters are specified, all issues will be returned.
+- **Create issue** creates a new issue for a string. Maximum length of _Issue text_ is 4000 characters. _Target language_ parameter is required for issues of the _Translation_ type. 
+- **Edit issue**. Specify only fields that need to be updated. Maximum length of _Issue text_ is 4000 characters. _Target language_ parameter is required when updating an issue to have the _Translation_ type. _Issue subtype_ parameter is required when updating _Issue type_.
+- **Open issue** sets the state of an issue to _Opened_.
+- **Close issue** sets the state of an issue to _Resolved_.
+
 ## Events
 
 - **On job completed** and **On job completed (manual)** are triggered when a job is completed, signifying that all authorized content in a job, for all locales, has reached the _Published_ step of the workflow.
@@ -75,7 +85,7 @@ Before you can connect you need to make sure that:
 
 ## Missing features
 
-- Issues
+- Issue comments
 - Tags
 - Reports
 - Translation quality checks
