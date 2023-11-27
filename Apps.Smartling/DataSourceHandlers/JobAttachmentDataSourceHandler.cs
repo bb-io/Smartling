@@ -26,17 +26,14 @@ public class JobAttachmentDataSourceHandler : SmartlingInvocable, IAsyncDataSour
         if (_jobIdentifier.TranslationJobUid == null)
             throw new Exception("Please enter job first.");
         
-        var getProjectRequest = new SmartlingRequest($"/projects-api/v2/projects/{ProjectId}", Method.Get);
-        var getProjectResponse = await Client.ExecuteWithErrorHandling<ResponseWrapper<ProjectDto>>(getProjectRequest);
-        var accountUid = getProjectResponse.Response.Data.AccountUid;
-
-        var getAttachmentsRequest = 
+        var accountUid = await GetAccountUid();
+        
+        var request = 
             new SmartlingRequest($"/attachments-api/v2/accounts/{accountUid}/jobs/{_jobIdentifier.TranslationJobUid}", 
                 Method.Get);
         
-        var getAttachmentsResponse =
-            await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<AttachmentDto>>>(getAttachmentsRequest);
-        var attachments = getAttachmentsResponse.Response.Data.Items;
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<AttachmentDto>>>(request);
+        var attachments = response.Response.Data.Items;
         
         return attachments
             .Where(attachment => context.SearchString == null || attachment.Name.Contains(context.SearchString))

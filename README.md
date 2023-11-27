@@ -77,6 +77,15 @@ Before you can connect you need to make sure that:
 - **Open issue** sets the state of an issue to _Opened_.
 - **Close issue** sets the state of an issue to _Resolved_.
 
+### Glossaries
+
+- **Get glossary** retrieves detailed information about a single glossary.
+- **Create glossary**.
+- **Update glossary** updates an existing glossary. Specify only fields that need to be updated.
+- **Add locales to glossary**.
+- **Add fallback locale to glossary**. You can read about fallback locales [here](https://help.smartling.com/hc/en-us/articles/4408673919643).
+- **Create glossary entry** creates a glossary entry along with its definition and original term. 
+
 ## Events
 
 - **On job completed** and **On job completed (manual)** are triggered when a job is completed, signifying that all authorized content in a job, for all locales, has reached the _Published_ step of the workflow.
@@ -86,12 +95,14 @@ Before you can connect you need to make sure that:
 ## Missing features
 
 - Issue comments
+- Issue webhooks
 - Tags
 - Reports
 - Translation quality checks
 - Glossaries
 - File Machine Translations
 - Context
+- Custom fields
 
 Let us know if you're interested!
 
