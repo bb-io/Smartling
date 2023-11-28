@@ -26,18 +26,15 @@ public class IssueSubTypeCodeDataSourceHandler : SmartlingInvocable, IAsyncDataS
         if (_createIssueRequest.IssueTypeCode == null)
             throw new Exception("Please enter issue type first.");
         
-        var getProjectRequest = new SmartlingRequest($"/projects-api/v2/projects/{ProjectId}", Method.Get);
-        var getProjectResponse = await Client.ExecuteWithErrorHandling<ResponseWrapper<ProjectDto>>(getProjectRequest);
-        var accountUid = getProjectResponse.Response.Data.AccountUid;
-
-        var getIssueTypesRequest = new SmartlingRequest($"/issues-api/v2/accounts/{accountUid}/issue-types", Method.Get);
-        var getIssueTypesResponse =
-            await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<IssueTypeDto>>>(getIssueTypesRequest);
-        var issueTypes = getIssueTypesResponse.Response.Data.Items;
+        var accountUid = await GetAccountUid();
+        var request = new SmartlingRequest($"/issues-api/v2/accounts/{accountUid}/issue-types", Method.Get);
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<IssueTypeDto>>>(request);
+        var issueTypes = response.Response.Data.Items;
         
         return issueTypes
             .First(type => type.IssueTypeCode == _createIssueRequest.IssueTypeCode).SubTypes
-            .Where(subtype => context.SearchString == null || subtype.Description.Contains(context.SearchString))
+            .Where(subtype => context.SearchString == null 
+                              || subtype.Description.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase))
             .ToDictionary(subtype => subtype.IssueSubTypeCode, subtype => subtype.Description);
     }
 }

@@ -20,7 +20,8 @@ public class IssueSeverityLevelCodeDataSourceHandler : SmartlingInvocable, IAsyn
         var request = new SmartlingRequest("/issues-api/v2/dictionary/issue-severity-levels", Method.Get);
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<IssueSeverityLevelDto>>>(request);
         var severityLevels = response.Response.Data.Items
-            .Where(level => context.SearchString == null || level.Description.Contains(context.SearchString))
+            .Where(level => context.SearchString == null 
+                            || level.Description.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase))
             .ToDictionary(level => level.IssueSeverityLevelCode, level => level.Description);
         return severityLevels;
     }

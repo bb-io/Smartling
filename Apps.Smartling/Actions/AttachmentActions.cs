@@ -15,16 +15,18 @@ namespace Apps.Smartling.Actions;
 [ActionList]
 public class AttachmentActions : SmartlingInvocable
 {
+    private readonly string _accountUid;
+    
     public AttachmentActions(InvocationContext invocationContext) : base(invocationContext)
     {
+        _accountUid = GetAccountUid().Result;
     }
 
     [Action("List files attached to job", Description = "Retrieve a list of files attached to a job.")]
     public async Task<ListAttachmentsResponse> ListFilesAttachedToJob([ActionParameter] JobIdentifier jobIdentifier)
     {
-        var accountUid = await GetAccountUid();
         var getAttachmentsRequest = 
-            new SmartlingRequest($"/attachments-api/v2/accounts/{accountUid}/jobs/{jobIdentifier.TranslationJobUid}", 
+            new SmartlingRequest($"/attachments-api/v2/accounts/{_accountUid}/jobs/{jobIdentifier.TranslationJobUid}", 
                 Method.Get);
         var getAttachmentsResponse =
             await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<AttachmentDto>>>(getAttachmentsRequest);
@@ -36,8 +38,7 @@ public class AttachmentActions : SmartlingInvocable
     public async Task<AttachmentDto> AddAttachmentToJob([ActionParameter] JobIdentifier jobIdentifier, 
         [ActionParameter] FileWrapper file, [ActionParameter] [Display("Attachment description")] string? description)
     {
-        var accountUid = await GetAccountUid();
-        var request = new SmartlingRequest($"/attachments-api/v2/accounts/{accountUid}/jobs/attachments", Method.Post);
+        var request = new SmartlingRequest($"/attachments-api/v2/accounts/{_accountUid}/jobs/attachments", Method.Post);
         request.AddFile("file", file.File.Bytes, file.File.Name);
         request.AddParameter("name", file.File.Name);
         request.AddParameter("entityUids", jobIdentifier.TranslationJobUid);
@@ -54,10 +55,9 @@ public class AttachmentActions : SmartlingInvocable
     public async Task<FileWrapper> DownloadJobAttachment([ActionParameter] JobIdentifier jobIdentifier, 
         [ActionParameter] JobAttachmentIdentifier jobAttachmentIdentifier)
     {
-        var accountUid = await GetAccountUid();
         var request =
             new SmartlingRequest(
-                $"/attachments-api/v2/accounts/{accountUid}/jobs/attachments/{jobAttachmentIdentifier.AttachmentUid}",
+                $"/attachments-api/v2/accounts/{_accountUid}/jobs/attachments/{jobAttachmentIdentifier.AttachmentUid}",
                 Method.Get);
         var response = await Client.ExecuteWithErrorHandling(request);
         
@@ -65,13 +65,5 @@ public class AttachmentActions : SmartlingInvocable
             .Split('\'')[^1];
         var contentType = response.ContentType.Split(';')[0];
         return new FileWrapper { File = new(response.RawBytes) { ContentType = contentType, Name = filename } };
-    }
-
-    private async Task<string> GetAccountUid()
-    {
-        var getProjectRequest = new SmartlingRequest($"/projects-api/v2/projects/{ProjectId}", Method.Get);
-        var getProjectResponse = await Client.ExecuteWithErrorHandling<ResponseWrapper<ProjectDto>>(getProjectRequest);
-        var accountUid = getProjectResponse.Response.Data.AccountUid;
-        return accountUid;
     }
 }

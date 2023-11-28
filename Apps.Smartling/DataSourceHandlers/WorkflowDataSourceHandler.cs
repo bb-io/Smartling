@@ -49,7 +49,8 @@ public class WorkflowDataSourceHandler : SmartlingInvocable, IAsyncDataSourceHan
         var workflows = getWorkflowsResponse.Response.Data.Items;
         
         return workflows
-            .Where(workflow => context.SearchString == null || workflow.WorkflowName.Contains(context.SearchString))
+            .Where(workflow => context.SearchString == null 
+                               || workflow.WorkflowName.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase))
             .ToDictionary(workflow => workflow.WorkflowUid, workflow => workflow.WorkflowName);
     }
 }
