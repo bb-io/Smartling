@@ -91,6 +91,11 @@ Before you can connect you need to make sure that:
 - **Add glossary entry translation** adds or updates glossary entry translation. If there is no translation for the specified _Locale_, a new translation is added. Otherwise, the existing translation is updated, but only with the specified parameters; all other parameters remain unchanged.
 - **Remove glossary entry**.
 
+### Reports
+
+- **Get word count report**.
+- **Get word count report in CSV format**.
+
 ## Events
 
 - **On job completed** and **On job completed (manual)** are triggered when a job is completed, signifying that all authorized content in a job, for all locales, has reached the _Published_ step of the workflow.
