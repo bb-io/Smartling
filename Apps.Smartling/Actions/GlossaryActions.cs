@@ -1,8 +1,10 @@
 ﻿using Apps.Smartling.Api;
+using Apps.Smartling.Models.Dtos;
 using Apps.Smartling.Models.Dtos.Glossaries;
 using Apps.Smartling.Models.Identifiers;
 using Apps.Smartling.Models.Requests.Glossaries;
 using Apps.Smartling.Models.Responses;
+using Apps.Smartling.Models.Responses.Glossaries;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Invocation;
@@ -52,7 +54,7 @@ public class GlossaryActions : SmartlingInvocable
 
     #region Put
 
-    [Action("Update glossary", Description = "Update an existing glossary.")]
+    [Action("Update glossary", Description = "Update an existing glossary. Specify only fields that need to be updated.")]
     public async Task<GlossaryDto> UpdateGlossary([ActionParameter] GlossaryIdentifier glossaryIdentifier, 
         [ActionParameter] UpdateGlossaryRequest input)
     {
@@ -138,6 +140,102 @@ public class GlossaryActions : SmartlingInvocable
 
     #region Glossary entries
 
+    #region Get
+
+    [Action("Get glossary entry", Description = "Retrieve a glossary entry.")]
+    public async Task<GlossaryEntryDto> GetGlossaryEntry([ActionParameter] GlossaryIdentifier glossaryIdentifier,
+        [ActionParameter] GlossaryEntryIdentifier glossaryEntryIdentifier)
+        => await GetGlossaryEntryAsync(glossaryIdentifier, glossaryEntryIdentifier);
+
+    [Action("Search glossary entries", Description = "List glossary entries that match the specified filter options. " +
+                                                     "If no parameters are specified, all glossary entries will be returned.")]
+    public async Task<SearchGlossaryEntriesResponse> SearchGlossaryEntries(
+        [ActionParameter] GlossaryIdentifier glossaryIdentifier,
+        [ActionParameter] SearchGlossaryEntriesRequest input)
+    {
+        var locales = input.LocaleIds;
+
+        if (locales == null)
+        {
+            var getGlossaryRequest =
+                new SmartlingRequest($"/glossary-api/v3/accounts/{_accountUid}/glossaries/{glossaryIdentifier.GlossaryUid}",
+                    Method.Get);
+            var getGlossaryResponse = await Client.ExecuteWithErrorHandling<ResponseWrapper<GlossaryDto>>(getGlossaryRequest);
+            locales = getGlossaryResponse.Response.Data.LocaleIds;
+        }
+
+        object createdFilter;
+        var after = input.GlossaryEntryCreatedAfter;
+        var before = input.GlossaryEntryCreatedBefore;
+
+        switch (after, before)
+        {
+            case (null, null):
+                createdFilter = null;
+                break;
+
+            case var dates when dates.after != null && dates.before != null:
+                createdFilter = new
+                {
+                    type = "date_range",
+                    level = "ANY",
+                    from = dates.after,
+                    to = dates.before
+                };
+                break;
+
+            case var dates when dates.after != null:
+                createdFilter = new
+                {
+                    type = "after",
+                    level = "ANY",
+                    date = dates.after
+                };
+                break;
+
+            default:
+                createdFilter = new
+                {
+                    type = "before",
+                    level = "ANY",
+                    date = before
+                };
+                break;
+        }
+
+        var searchEntriesRequest =
+            new SmartlingRequest(
+                $"/glossary-api/v3/accounts/{_accountUid}/glossaries/{glossaryIdentifier.GlossaryUid}/entries/search",
+                Method.Post);
+        searchEntriesRequest.AddJsonBody(new
+        {
+            query = input.Query,
+            localeIds = locales,
+            entryState = input.EntryState,
+            missingTranslationLocaleId = input.MissingTranslationLocaleId,
+            presentTranslationLocaleId = input.PresentTranslationLocaleId,
+            dntLocaleId = input.DntLocaleId,
+            returnFallbackTranslations = input.ReturnFallbackTranslations,
+            labels = input.LabelIds == null
+                ? null
+                : new
+                {
+                    type = "associated",
+                    labelUids = input.LabelIds
+                },
+            dntTermSet = input.DntTermSet,
+            created = createdFilter
+        });
+
+        var searchEntriesResponse =
+            await Client
+                .ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<GlossaryEntryDto>>>(searchEntriesRequest);
+        var entries = searchEntriesResponse.Response.Data.Items;
+        return new(entries);
+    }
+
+    #endregion
+    
     #region Post
     
     [Action("Create glossary entry", Description = "Create a new entry in a glossary.")]
@@ -175,6 +273,163 @@ public class GlossaryActions : SmartlingInvocable
     }
     
     #endregion
+
+    #region Put
+
+    [Action("Update glossary entry", Description = "Update an existing glossary entry. Specify only fields that need " +
+                                                   "to be updated.")]
+    public async Task<GlossaryEntryDto> UpdateGlossaryEntry([ActionParameter] GlossaryIdentifier glossaryIdentifier,
+        [ActionParameter] GlossaryEntryIdentifier glossaryEntryIdentifier, 
+        [ActionParameter] UpdateGlossaryEntryRequest input)
+    {
+        var entry = await GetGlossaryEntryAsync(glossaryIdentifier, glossaryEntryIdentifier);
+        var request =
+            new SmartlingRequest(
+                $"/glossary-api/v3/accounts/{_accountUid}/glossaries/{glossaryIdentifier.GlossaryUid}/entries/{glossaryEntryIdentifier.EntryUid}",
+                Method.Put);
+        request.AddJsonBody(new
+        {
+            definition = input.Definition ?? entry.Definition,
+            partOfSpeech = input.PartOfSpeech ?? entry.PartOfSpeech,
+            labelUids = input.LabelUids ?? entry.LabelUids,
+            translations = entry.Translations.Select(translation => new
+            {
+                localeId = translation.LocaleId,
+                term = translation.Term,
+                notes = translation.Notes,
+                caseSensitive = translation.CaseSensitive,
+                exactMatch = translation.ExactMatch,
+                doNotTranslate = translation.DoNotTranslate,
+                disabled = translation.Disabled,
+                variants = translation.Variants,
+                customFieldValues = translation.CustomFieldValues.Select(value => new
+                {
+                    fieldUid = value.FieldUid,
+                    fieldValue = value.FieldValue
+                })
+            }),
+            customFieldValues = entry.CustomFieldValues.Select(value => new
+            {
+                fieldUid = value.FieldUid,
+                fieldValue = value.FieldValue
+            })
+        });
+
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<GlossaryEntryDto>>(request);
+        var updatedEntry = response.Response.Data;
+        return updatedEntry;
+    }
+    
+    [Action("Add glossary entry translation", Description = "Add a translation for a glossary entry.")]
+    public async Task<GlossaryEntryDto> AddGlossaryEntryTranslation(
+        [ActionParameter] GlossaryIdentifier glossaryIdentifier,
+        [ActionParameter] GlossaryEntryIdentifier glossaryEntryIdentifier, 
+        [ActionParameter] AddGlossaryEntryTranslationRequest input)
+    {
+        var entry = await GetGlossaryEntryAsync(glossaryIdentifier, glossaryEntryIdentifier);
+        var request =
+            new SmartlingRequest(
+                $"/glossary-api/v3/accounts/{_accountUid}/glossaries/{glossaryIdentifier.GlossaryUid}/entries/{glossaryEntryIdentifier.EntryUid}",
+                Method.Put);
+
+        var translations = entry.Translations.ToList();
+        var targetTranslationIndex = translations.FindIndex(translation => translation.LocaleId == input.TermLocaleId);
+
+        if (targetTranslationIndex != -1)
+        {
+            translations[targetTranslationIndex].Term = input.Term;
+            translations[targetTranslationIndex].CaseSensitive = input.TermCaseSensitive ?? translations[targetTranslationIndex].CaseSensitive;
+            translations[targetTranslationIndex].ExactMatch = input.TermExactMatch ?? translations[targetTranslationIndex].ExactMatch;
+            translations[targetTranslationIndex].DoNotTranslate = input.DoNotTranslate ?? translations[targetTranslationIndex].DoNotTranslate;
+            translations[targetTranslationIndex].Notes = input.TermNotes ?? translations[targetTranslationIndex].Notes;
+            translations[targetTranslationIndex].Disabled = input.Disabled ?? translations[targetTranslationIndex].Disabled;
+            translations[targetTranslationIndex].Variants = input.TermVariations ?? translations[targetTranslationIndex].Variants;
+        }
+        else
+        {
+            translations.Add(new GlossaryEntryTranslationDto
+            {
+                LocaleId = input.TermLocaleId,
+                Term = input.Term,
+                Notes = input.TermNotes,
+                CaseSensitive = input.TermCaseSensitive ?? false,
+                ExactMatch = input.TermExactMatch ?? false,
+                DoNotTranslate = input.DoNotTranslate ?? false,
+                Disabled = input.Disabled ?? false,
+                Variants = input.TermVariations ?? new string[] { },
+                CustomFieldValues = new GlossaryEntryTranslationCustomFieldDto[] { }
+            });
+        }
+        
+        request.AddJsonBody(new
+        {
+            definition = entry.Definition,
+            partOfSpeech = entry.PartOfSpeech,
+            labelUids = entry.LabelUids,
+            translations = translations.Select(translation => new
+            {
+                localeId = translation.LocaleId,
+                term = translation.Term,
+                notes = translation.Notes,
+                caseSensitive = translation.CaseSensitive,
+                exactMatch = translation.ExactMatch,
+                doNotTranslate = translation.DoNotTranslate,
+                disabled = translation.Disabled,
+                variants = translation.Variants,
+                customFieldValues = translation.CustomFieldValues.Select(value => new
+                {
+                    fieldUid = value.FieldUid,
+                    fieldValue = value.FieldValue
+                })
+            }),
+            customFieldValues = entry.CustomFieldValues.Select(value => new
+            {
+                fieldUid = value.FieldUid,
+                fieldValue = value.FieldValue
+            })
+        });
+
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<GlossaryEntryDto>>(request);
+        var updatedEntry = response.Response.Data;
+        return updatedEntry;
+    }
+
+    #endregion
+
+    #region Delete
+
+    [Action("Remove glossary entry", Description = "Remove a glossary entry.")]
+    public async Task RemoveGlossaryEntry([ActionParameter] GlossaryIdentifier glossaryIdentifier,
+        [ActionParameter] GlossaryEntryIdentifier glossaryEntryIdentifier)
+    {
+        var request =
+            new SmartlingRequest(
+                $"/glossary-api/v3/accounts/{_accountUid}/glossaries/{glossaryIdentifier.GlossaryUid}/entries/delete",
+                Method.Post);
+        request.AddJsonBody(new
+        {
+            filter = new
+            {
+                entryUids = new[] { glossaryEntryIdentifier.EntryUid }
+            }
+        });
+        
+        await Client.ExecuteWithErrorHandling(request);
+    }
+
+    #endregion
+    
+    private async Task<GlossaryEntryDto> GetGlossaryEntryAsync(GlossaryIdentifier glossaryIdentifier,
+        GlossaryEntryIdentifier glossaryEntryIdentifier)
+    {
+        var request =
+            new SmartlingRequest(
+                $"/glossary-api/v3/accounts/{_accountUid}/glossaries/{glossaryIdentifier.GlossaryUid}/entries/{glossaryEntryIdentifier.EntryUid}",
+                Method.Get);
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<GlossaryEntryDto>>(request);
+        var entry = response.Response.Data;
+        return entry;
+    }
 
     #endregion
 }

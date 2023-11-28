@@ -13,7 +13,7 @@ public class GlossaryEntryDto
     public string Definition { get; set; }
     
     [Display("Part of speech")]
-    public string PartOfSpeech { get; set; }
+    public string? PartOfSpeech { get; set; }
     
     [Display("Labels")]
     public IEnumerable<string> LabelUids { get; set; }
@@ -32,10 +32,10 @@ public class GlossaryEntryDto
     public string ModifiedByUserUid { get; set; }
     
     [Display("Date of creation")]
-    public string CreatedDate { get; set; }
+    public DateTime CreatedDate { get; set; }
     
     [Display("Date of last modification")]
-    public string ModifiedDate { get; set; }
+    public DateTime ModifiedDate { get; set; }
 }
 
 public class GlossaryEntryTranslationDto
@@ -44,11 +44,11 @@ public class GlossaryEntryTranslationDto
     public string LocaleId { get; set; }
     
     [Display("Fallback locale")]
-    public string FallbackLocaleId { get; set; }
+    public string? FallbackLocaleId { get; set; }
     
     public string Term { get; set; }
     
-    public string Notes { get; set; }
+    public string? Notes { get; set; }
     
     [Display("Case sensitive")]
     public bool CaseSensitive { get; set; }
@@ -75,10 +75,10 @@ public class GlossaryEntryTranslationDto
     public string ModifiedByUserUid { get; set; }
     
     [Display("Date of creation")]
-    public string CreatedDate { get; set; }
+    public DateTime CreatedDate { get; set; }
     
     [Display("Date of last modification")]
-    public string ModifiedDate { get; set; }
+    public DateTime ModifiedDate { get; set; }
 }
 
 public class GlossaryEntryTranslationCustomFieldDto

@@ -36,7 +36,8 @@ public class JobAttachmentDataSourceHandler : SmartlingInvocable, IAsyncDataSour
         var attachments = response.Response.Data.Items;
         
         return attachments
-            .Where(attachment => context.SearchString == null || attachment.Name.Contains(context.SearchString))
+            .Where(attachment => context.SearchString == null 
+                                 || attachment.Name.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase))
             .ToDictionary(attachment => attachment.AttachmentUid, attachment => attachment.Name);
     }
 }

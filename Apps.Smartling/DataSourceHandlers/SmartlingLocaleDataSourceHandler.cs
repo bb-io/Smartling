@@ -21,7 +21,8 @@ public class SmartlingLocaleDataSourceHandler : SmartlingInvocable, IAsyncDataSo
         var request = new SmartlingRequest("/locales-api/v2/dictionary/locales?supportedOnly=true", Method.Get);
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<LocaleDto>>>(request);
         var targetLocales = response.Response.Data.Items
-            .Where(locale => context.SearchString == null || locale.Description.Contains(context.SearchString))
+            .Where(locale => context.SearchString == null 
+                             || locale.Description.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase))
             .ToDictionary(locale => locale.LocaleId, locale => locale.Description);
         return targetLocales;
     }

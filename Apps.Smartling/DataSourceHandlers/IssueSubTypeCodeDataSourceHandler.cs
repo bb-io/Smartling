@@ -33,7 +33,8 @@ public class IssueSubTypeCodeDataSourceHandler : SmartlingInvocable, IAsyncDataS
         
         return issueTypes
             .First(type => type.IssueTypeCode == _createIssueRequest.IssueTypeCode).SubTypes
-            .Where(subtype => context.SearchString == null || subtype.Description.Contains(context.SearchString))
+            .Where(subtype => context.SearchString == null 
+                              || subtype.Description.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase))
             .ToDictionary(subtype => subtype.IssueSubTypeCode, subtype => subtype.Description);
     }
 }

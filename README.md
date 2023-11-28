@@ -81,10 +81,15 @@ Before you can connect you need to make sure that:
 
 - **Get glossary** retrieves detailed information about a single glossary.
 - **Create glossary**.
-- **Update glossary** updates an existing glossary. Specify only fields that need to be updated.
+- **Update glossary** updates an existing glossary. Specify only fields that need to be updated. Specifying the _Locales_ parameter overrides the existing locales. To simply add more locales to the existing list, use the **Add locales to glossary** action.
 - **Add locales to glossary**.
 - **Add fallback locale to glossary**. You can read about fallback locales [here](https://help.smartling.com/hc/en-us/articles/4408673919643).
-- **Create glossary entry** creates a glossary entry along with its definition and original term. 
+- **Get glossary entry**.
+- **Search glossary entries** lists glossary entries that match the specified filter options. If no parameters are specified, all glossary entries will be returned.
+- **Create glossary entry** creates a glossary entry along with its definition and original term.
+- **Update glossary entry**. Specify only fields that need to be updated.
+- **Add glossary entry translation** adds or updates glossary entry translation. If there is no translation for the specified _Locale_, a new translation is added. Otherwise, the existing translation is updated, but only with the specified parameters; all other parameters remain unchanged.
+- **Remove glossary entry**.
 
 ## Events
 
@@ -99,7 +104,6 @@ Before you can connect you need to make sure that:
 - Tags
 - Reports
 - Translation quality checks
-- Glossaries
 - File Machine Translations
 - Context
 - Custom fields

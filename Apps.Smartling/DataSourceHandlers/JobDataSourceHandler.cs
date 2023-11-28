@@ -21,7 +21,8 @@ public class JobDataSourceHandler : SmartlingInvocable, IAsyncDataSourceHandler
             Method.Get);
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<JobDto>>>(request);
         var jobs = response.Response.Data.Items
-            .Where(job => context.SearchString == null || job.JobName.Contains(context.SearchString))
+            .Where(job => context.SearchString == null 
+                          || job.JobName.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase))
             .ToDictionary(job => job.TranslationJobUid, job => job.JobName);
         return jobs;
     }

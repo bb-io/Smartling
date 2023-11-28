@@ -42,7 +42,8 @@ public class GlossaryTermLocaleDataSourceHandler : SmartlingInvocable, IAsyncDat
             await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<LocaleDto>>>(getLocalesRequest);
         
         var glossaryTermLocales = getLocalesResponse.Response.Data.Items
-            .Where(locale => context.SearchString == null || locale.Description.Contains(context.SearchString))
+            .Where(locale => context.SearchString == null 
+                             || locale.Description.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase))
             .ToDictionary(locale => locale.LocaleId, locale => locale.Description);
         return glossaryTermLocales;
     }
