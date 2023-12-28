@@ -10,18 +10,23 @@ using Apps.Smartling.Models.Responses;
 using Apps.Smartling.Models.Responses.Files;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
+using Blackbird.Applications.Sdk.Common.Files;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Utils.Extensions.Files;
+using Blackbird.Applications.Sdk.Utils.Models;
+using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
 using RestSharp;
-using File = Blackbird.Applications.Sdk.Common.Files.File;
 
 namespace Apps.Smartling.Actions;
 
 [ActionList]
 public class FileActions : SmartlingInvocable
 {
-    public FileActions(InvocationContext invocationContext) : base(invocationContext)
+    private readonly IFileManagementClient _fileManagementClient;
+
+    public FileActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient) : base(invocationContext)
     {
+        _fileManagementClient = fileManagementClient;
     }
 
     #region Get
@@ -59,7 +64,7 @@ public class FileActions : SmartlingInvocable
     {
         var endpoint = $"/files-api/v2/projects/{ProjectId}/locales/all/file/zip?fileUri={fileIdentifier.FileUri}";
         var zip = await DownloadFile(endpoint);
-        var files = await zip.Bytes.GetFilesFromZip();
+        var files = await _fileManagementClient.DownloadAsync(zip).Result.GetByteData().Result.GetFilesFromZip(_fileManagementClient);
         var resultFiles = new List<FileWrapper>();
 
         foreach (var file in files)
@@ -88,14 +93,17 @@ public class FileActions : SmartlingInvocable
 
     #region Get utils
 
-    private async Task<File> DownloadFile(string endpoint)
+    private async Task<FileReference> DownloadFile(string endpoint)
     {
         var request = new SmartlingRequest(endpoint, Method.Get);
         var response = await Client.ExecuteWithErrorHandling(request);
         var filename = response.ContentHeaders.First(header => header.Name == "Content-Disposition").Value.ToString()
             .Split('"')[1];
         var contentType = response.ContentType.Split(';')[0];
-        return new(response.RawBytes) { ContentType = contentType, Name = filename };
+
+        using var stream = new MemoryStream(response.RawBytes);
+        var file = await _fileManagementClient.UploadAsync(stream, contentType, filename);
+        return file;
     }
     
     private string CreateNameForTranslatedFile(string originalFilename, string locale) 
@@ -130,7 +138,9 @@ public class FileActions : SmartlingInvocable
             await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<TargetFileDtoWrapper>>>(getTargetFileDataRequest);
         
         var uploadFileRequest = new SmartlingRequest($"/files-api/v2/projects/{ProjectId}/file", Method.Post);
-        uploadFileRequest.AddFile("file", file.File.Bytes, file.File.Name);
+
+        var fileBytes = _fileManagementClient.DownloadAsync(file.File).Result.GetByteData().Result;
+        uploadFileRequest.AddFile("file", fileBytes, file.File.Name);
         uploadFileRequest.AddParameter("fileUri", fileUri);
         uploadFileRequest.AddParameter("fileType", fileType);
         await Client.ExecuteWithErrorHandling(uploadFileRequest);
@@ -178,7 +188,9 @@ public class FileActions : SmartlingInvocable
         var fileType = GetFileType(file.File.Name);
         var request = new SmartlingRequest($"/files-api/v2/projects/{ProjectId}/locales/{targetLocale.TargetLocaleId}/file/import", 
             Method.Post);
-        request.AddFile("file", file.File.Bytes, file.File.Name);
+
+        var fileBytes = _fileManagementClient.DownloadAsync(file.File).Result.GetByteData().Result;
+        request.AddFile("file", fileBytes, file.File.Name);
         request.AddParameter("fileUri", fileIdentifier.FileUri);
         request.AddParameter("fileType", fileType);
         request.AddParameter("translationState", input.TranslationState);
