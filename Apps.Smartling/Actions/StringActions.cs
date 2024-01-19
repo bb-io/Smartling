@@ -83,7 +83,7 @@ public class StringActions : SmartlingInvocable
     }
     
     [Action("List translations for string by hashcode", Description = "List translations for a string with specified hashcode.")]
-    public async Task<StringTranslationsDto> GetStringTranslationsByHashcode(
+    public async Task<TranslationsResponse> GetStringTranslationsByHashcode(
         [ActionParameter] StringIdentifier stringIdentifier,
         [ActionParameter] TargetLocaleIdentifier targetLocale)
     {
@@ -92,7 +92,7 @@ public class StringActions : SmartlingInvocable
             Method.Get);
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<StringTranslationsDto>>>(request);
         var translations = response.Response.Data.Items.FirstOrDefault();
-        return translations;
+        return new TranslationsResponse { Translations = translations.Translations.Select(x => x.Translation)};
     }
 
     #endregion
