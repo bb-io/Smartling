@@ -92,7 +92,7 @@ public class StringActions : SmartlingInvocable
             Method.Get);
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<StringTranslationsDto>>>(request);
         var translations = response.Response.Data.Items.FirstOrDefault();
-        return new TranslationsResponse { Translations = translations.Translations != null ? translations.Translations.Select(x => x.Translation) : new List<string>()};
+        return new TranslationsResponse { Translations = translations?.Translations != null ? translations.Translations.Select(x => x.Translation) : new List<string>()};
     }
 
     #endregion
