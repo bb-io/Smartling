@@ -10,7 +10,7 @@ public class StringTranslationsDto : StringDto
     [Display("Workflow step")]
     public string WorkflowStepUid { get; set; }
     
-    public IEnumerable<StringTranslationDto> Translations { get; set; } 
+    public IEnumerable<StringTranslationDto>? Translations { get; set; } 
 }
 
 public class StringTranslationDto
