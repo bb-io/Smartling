@@ -8,6 +8,8 @@ using Apps.Smartling.Models.Responses.Attachments;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Invocation;
+using Blackbird.Applications.Sdk.Utils.Extensions.Files;
+using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
 using RestSharp;
 
 namespace Apps.Smartling.Actions;
@@ -16,10 +18,12 @@ namespace Apps.Smartling.Actions;
 public class AttachmentActions : SmartlingInvocable
 {
     private readonly string _accountUid;
-    
-    public AttachmentActions(InvocationContext invocationContext) : base(invocationContext)
+    private readonly IFileManagementClient _fileManagementClient;
+
+    public AttachmentActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient) : base(invocationContext)
     {
         _accountUid = GetAccountUid().Result;
+        _fileManagementClient = fileManagementClient;
     }
 
     [Action("List files attached to job", Description = "Retrieve a list of files attached to a job.")]
@@ -39,7 +43,9 @@ public class AttachmentActions : SmartlingInvocable
         [ActionParameter] FileWrapper file, [ActionParameter] [Display("Attachment description")] string? description)
     {
         var request = new SmartlingRequest($"/attachments-api/v2/accounts/{_accountUid}/jobs/attachments", Method.Post);
-        request.AddFile("file", file.File.Bytes, file.File.Name);
+
+        var fileBytes = _fileManagementClient.DownloadAsync(file.File).Result.GetByteData().Result;
+        request.AddFile("file", fileBytes, file.File.Name);
         request.AddParameter("name", file.File.Name);
         request.AddParameter("entityUids", jobIdentifier.TranslationJobUid);
 
@@ -64,6 +70,9 @@ public class AttachmentActions : SmartlingInvocable
         var filename = response.ContentHeaders.First(header => header.Name == "Content-Disposition").Value.ToString()
             .Split('\'')[^1];
         var contentType = response.ContentType.Split(';')[0];
-        return new FileWrapper { File = new(response.RawBytes) { ContentType = contentType, Name = filename } };
+
+        using var stream = new MemoryStream(response.RawBytes);
+        var file = await _fileManagementClient.UploadAsync(stream, contentType, filename);
+        return new FileWrapper { File = file };
     }
 }

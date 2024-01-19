@@ -8,6 +8,7 @@ using Apps.Smartling.Models.Responses.Reports;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Invocation;
+using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
 using RestSharp;
 
 namespace Apps.Smartling.Actions;
@@ -15,10 +16,12 @@ namespace Apps.Smartling.Actions;
 public class ReportActions : SmartlingInvocable
 {
     private readonly string _accountUid;
-    
-    public ReportActions(InvocationContext invocationContext) : base(invocationContext)
+    private readonly IFileManagementClient _fileManagementClient;
+
+    public ReportActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient) : base(invocationContext)
     {
         _accountUid = GetAccountUid().Result;
+        _fileManagementClient = fileManagementClient;
     }
 
     [Action("Get word count report", Description = "Retrieve a word count report for specified parameters.")]
@@ -46,14 +49,12 @@ public class ReportActions : SmartlingInvocable
             $"/reports-api/v3/word-count/csv?startDate={startDate}&endDate={endDate}&accountUid={_accountUid}&projectIds={ProjectId}";
         var request = new SmartlingRequest(endpoint, Method.Get);
         var response = await Client.ExecuteWithErrorHandling(request);
-        
+
+        using var stream = new MemoryStream(response.RawBytes);
+        var file = await _fileManagementClient.UploadAsync(stream, response.ContentType, response.ContentHeaders.First(h => h.Name == "Content-Disposition").Value.ToString().Split('"')[1]);
         return new()
         {
-            File = new(response.RawBytes)
-            {
-                ContentType = response.ContentType,
-                Name = response.ContentHeaders.First(h => h.Name == "Content-Disposition").Value.ToString().Split('"')[1]
-            }
+            File = file
         };
     }
 }
