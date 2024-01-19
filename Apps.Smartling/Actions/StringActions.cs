@@ -54,7 +54,7 @@ public class StringActions : SmartlingInvocable
                 $"/strings-api/v2/projects/{ProjectId}/source-strings?hashcodes={stringIdentifier.Hashcode}", 
                 Method.Get);
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<SourceStringDto>>>(request);
-        var sourceString = response.Response.Data.Items.First();
+        var sourceString = response.Response.Data.Items.FirstOrDefault();
         return sourceString;
     }
 
@@ -91,12 +91,12 @@ public class StringActions : SmartlingInvocable
             $"/strings-api/v2/projects/{ProjectId}/translations?targetLocaleId={targetLocale.TargetLocaleId}&hashcodes={stringIdentifier.Hashcode}",
             Method.Get);
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<StringTranslationsDto>>>(request);
-        var translations = response.Response.Data.Items.First();
+        var translations = response.Response.Data.Items.FirstOrDefault();
         return translations;
     }
 
     #endregion
-    
+
     #region Post
 
     [Action("Add string to project", Description = "Uploads a string to a project.")]
@@ -126,7 +126,7 @@ public class StringActions : SmartlingInvocable
         });
 
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<StringDto>>>(request);
-        var stringDto = response.Response.Data.Items.First();
+        var stringDto = response.Response.Data.Items.FirstOrDefault();
         return stringDto;
     }
 
@@ -166,6 +166,6 @@ public class StringActions : SmartlingInvocable
         await Client.ExecuteWithErrorHandling(request);
         return stringIdentifier;
     }
-    
+
     #endregion
 }
