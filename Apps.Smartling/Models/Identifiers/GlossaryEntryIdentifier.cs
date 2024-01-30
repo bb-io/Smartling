@@ -6,7 +6,7 @@ namespace Apps.Smartling.Models.Identifiers;
 
 public class GlossaryEntryIdentifier
 {
-    [Display("Entry")]
+    [Display("Entry ID")]
     [DataSource(typeof(GlossaryEntryDataSourceHandler))]
     public string EntryUid { get; set; }
 }

@@ -6,7 +6,7 @@ namespace Apps.Smartling.Models.Identifiers;
 
 public class JobAttachmentIdentifier
 {
-    [Display("Attachment")]
+    [Display("Attachment ID")]
     [DataSource(typeof(JobAttachmentDataSourceHandler))]
     public string AttachmentUid { get; set; }
 }

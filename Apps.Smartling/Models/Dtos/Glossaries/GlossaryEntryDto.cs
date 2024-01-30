@@ -4,10 +4,10 @@ namespace Apps.Smartling.Models.Dtos.Glossaries;
 
 public class GlossaryEntryDto
 {
-    [Display("Entry")]
+    [Display("Entry ID")]
     public string EntryUid { get; set; }
     
-    [Display("Glossary")]
+    [Display("Glossary ID")]
     public string GlossaryUid { get; set; }
     
     public string Definition { get; set; }
@@ -40,10 +40,10 @@ public class GlossaryEntryDto
 
 public class GlossaryEntryTranslationDto
 {
-    [Display("Locale")]
+    [Display("Locale ID")]
     public string LocaleId { get; set; }
     
-    [Display("Fallback locale")]
+    [Display("Fallback locale ID")]
     public string? FallbackLocaleId { get; set; }
     
     public string Term { get; set; }
@@ -68,10 +68,10 @@ public class GlossaryEntryTranslationDto
     [Display("Custom field values")]
     public IEnumerable<GlossaryEntryTranslationCustomFieldDto> CustomFieldValues { get; set; }
     
-    [Display("Created by user")]
+    [Display("Created by user ID")]
     public string CreatedByUserUid { get; set; }
     
-    [Display("Modified by user")]
+    [Display("Modified by user ID")]
     public string ModifiedByUserUid { get; set; }
     
     [Display("Date of creation")]
@@ -83,7 +83,7 @@ public class GlossaryEntryTranslationDto
 
 public class GlossaryEntryTranslationCustomFieldDto
 {
-    [Display("Field")]
+    [Display("Field ID")]
     public string FieldUid { get; set; }
     
     [Display("Field name")]
@@ -92,13 +92,13 @@ public class GlossaryEntryTranslationCustomFieldDto
     [Display("Field value")]
     public string FieldValue { get; set; }
     
-    [Display("Locale")]
+    [Display("Locale ID")]
     public string LocaleId { get; set; }
 }
 
 public class GlossaryEntryCustomFieldDto
 {
-    [Display("Field")]
+    [Display("Field ID")]
     public string FieldUid { get; set; }
     
     [Display("Field name")]

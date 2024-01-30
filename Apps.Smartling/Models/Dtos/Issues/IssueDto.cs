@@ -4,7 +4,7 @@ namespace Apps.Smartling.Models.Dtos.Issues;
 
 public class IssueDto
 {
-    [Display("Issue unique identifier")]
+    [Display("Issue ID")]
     public string IssueUid { get; set; }
     
     public bool Answered { get; set; }
@@ -30,19 +30,19 @@ public class IssueDto
     [Display("Issue type")]
     public string IssueTypeCode { get; set; }
 
-    [Display("Account unique identifier")]
+    [Display("Account ID")]
     public string AccountUid { get; set; }
 
     [Display("Issue number")]
     public string IssueNumber { get; set; }
 
-    [Display("Reported by user")]
+    [Display("Reported by user ID")]
     public string ReportedByUserUid { get; set; }
 
-    [Display("Resolved by user")]
+    [Display("Resolved by user ID")]
     public string? ResolvedByUserUid { get; set; }
 
-    [Display("Assignee")]
+    [Display("Assignee ID")]
     public string? AssigneeUserUid { get; set; }
 
     [Display("Date of resolution")]
@@ -50,7 +50,7 @@ public class IssueDto
     
     public bool Reopened { get; set; }
 
-    [Display("Reopened by user")]
+    [Display("Reopened by user ID")]
     public string? ReopenedByUserUid { get; set; }
 
     [Display("Date of reopening")]
@@ -63,6 +63,6 @@ public class IssueStringDto
 {
     public string Hashcode { get; set; }
     
-    [Display("Locale")]
+    [Display("Locale ID")]
     public string? LocaleId { get; set; }
 }

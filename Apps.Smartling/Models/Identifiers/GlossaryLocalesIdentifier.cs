@@ -6,7 +6,7 @@ namespace Apps.Smartling.Models.Identifiers;
 
 public class GlossaryLocalesIdentifier
 {
-    [Display("Locales")]
+    [Display("Locale IDs")]
     [DataSource(typeof(SmartlingLocaleDataSourceHandler))]
     public IEnumerable<string> LocaleIds { get; set; }
 }

@@ -6,7 +6,7 @@ namespace Apps.Smartling.Models.Identifiers;
 
 public class TargetLocalesIdentifier
 {
-    [Display("Target locales")]
+    [Display("Target locale IDs")]
     [DataSource(typeof(TargetLocaleDataSourceHandler))]
     public IEnumerable<string>? TargetLocaleIds { get; set; }
 }

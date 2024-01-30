@@ -4,7 +4,7 @@ namespace Apps.Smartling.Models.Dtos.Jobs;
 
 public class CustomFieldDto
 {
-    [Display("Field unique identifier")]
+    [Display("Field ID")]
     public string FieldUid { get; set; }
     
     [Display("Field value")]
