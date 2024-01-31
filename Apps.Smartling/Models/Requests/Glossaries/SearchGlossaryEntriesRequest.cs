@@ -9,7 +9,7 @@ public class SearchGlossaryEntriesRequest
 {
     public string? Query { get; set; }
     
-    [Display("Locales")]
+    [Display("Locale IDs")]
     [DataSource(typeof(GlossaryTermLocaleDataSourceHandler))]
     public IEnumerable<string>? LocaleIds { get; set; }
     

@@ -9,9 +9,9 @@ using RestSharp;
 namespace Apps.Smartling.DataSourceHandlers;
 
 // This data source handler is responsible for retrieving all languages across all projects in current account
-public class GlossaryLocaleDataSourceHandler : SmartlingInvocable, IAsyncDataSourceHandler
+public class AccountAvailableLocaleDataSourceHandler : SmartlingInvocable, IAsyncDataSourceHandler
 {
-    public GlossaryLocaleDataSourceHandler(InvocationContext invocationContext) : base(invocationContext)
+    public AccountAvailableLocaleDataSourceHandler(InvocationContext invocationContext) : base(invocationContext)
     {
     }
 

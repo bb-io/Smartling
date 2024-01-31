@@ -1,4 +1,7 @@
-﻿using Apps.Smartling.Api;
+﻿using System.Net.Mime;
+using System.Text.RegularExpressions;
+using Apps.Smartling.Api;
+using Apps.Smartling.DataSourceHandlers;
 using Apps.Smartling.Models.Dtos;
 using Apps.Smartling.Models.Dtos.Glossaries;
 using Apps.Smartling.Models.Identifiers;
@@ -7,7 +10,14 @@ using Apps.Smartling.Models.Responses;
 using Apps.Smartling.Models.Responses.Glossaries;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
+using Blackbird.Applications.Sdk.Common.Dynamic;
 using Blackbird.Applications.Sdk.Common.Invocation;
+using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
+using Blackbird.Applications.Sdk.Glossaries.Utils.Converters;
+using Blackbird.Applications.Sdk.Glossaries.Utils.Dtos;
+using Blackbird.Applications.Sdk.Glossaries.Utils.Dtos.Enums;
+using Blackbird.Applications.Sdk.Glossaries.Utils.Parsers;
+using Blackbird.Applications.Sdk.Utils.Extensions.Http;
 using RestSharp;
 
 namespace Apps.Smartling.Actions;
@@ -16,12 +26,15 @@ namespace Apps.Smartling.Actions;
 public class GlossaryActions : SmartlingInvocable
 {
     private readonly string _accountUid;
-    
-    public GlossaryActions(InvocationContext invocationContext) : base(invocationContext)
+    private readonly IFileManagementClient _fileManagementClient;
+
+    public GlossaryActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient) 
+        : base(invocationContext)
     {
         _accountUid = GetAccountUid().Result;
+        _fileManagementClient = fileManagementClient;
     }
-    
+
     #region Glossaries
 
     #region Get
@@ -33,7 +46,7 @@ public class GlossaryActions : SmartlingInvocable
     #endregion
 
     #region Post
-    
+
     [Action("Create glossary", Description = "Create a new glossary.")]
     public async Task<GlossaryDto> CreateGlossary([ActionParameter] CreateGlossaryRequest input)
     {
@@ -44,7 +57,7 @@ public class GlossaryActions : SmartlingInvocable
             description = input.Description,
             localeIds = input.LocaleIds
         });
-        
+
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<GlossaryDto>>(request);
         var glossary = response.Response.Data;
         return glossary;
@@ -54,8 +67,9 @@ public class GlossaryActions : SmartlingInvocable
 
     #region Put
 
-    [Action("Update glossary", Description = "Update an existing glossary. Specify only fields that need to be updated.")]
-    public async Task<GlossaryDto> UpdateGlossary([ActionParameter] GlossaryIdentifier glossaryIdentifier, 
+    [Action("Update glossary",
+        Description = "Update an existing glossary. Specify only fields that need to be updated.")]
+    public async Task<GlossaryDto> UpdateGlossary([ActionParameter] GlossaryIdentifier glossaryIdentifier,
         [ActionParameter] UpdateGlossaryRequest input)
     {
         var existingGlossary = await GetGlossaryAsync(glossaryIdentifier);
@@ -73,14 +87,15 @@ public class GlossaryActions : SmartlingInvocable
 
     [Action("Add locales to glossary", Description = "Update a glossary's list of locales with new locales.")]
     public async Task<GlossaryDto> AddLocalesToGlossary([ActionParameter] GlossaryIdentifier glossaryIdentifier,
-        [ActionParameter] GlossaryLocalesIdentifier locales)
+        [ActionParameter] [Display("Locale IDs")] [DataSource(typeof(SmartlingLocaleDataSourceHandler))]
+        IEnumerable<string> localeIds)
     {
         var existingGlossary = await GetGlossaryAsync(glossaryIdentifier);
         var requestBody = new
         {
             glossaryName = existingGlossary.GlossaryName,
             description = existingGlossary.Description,
-            localeIds = existingGlossary.LocaleIds.Union(locales.LocaleIds),
+            localeIds = existingGlossary.LocaleIds.Union(localeIds),
             verificationMode = existingGlossary.VerificationMode,
             fallbackLocales = existingGlossary.FallbackLocales
         };
@@ -109,6 +124,257 @@ public class GlossaryActions : SmartlingInvocable
         
         var updatedGlossary = await UpdateGlossaryAsync(glossaryIdentifier, requestBody);
         return updatedGlossary;
+    }
+
+    #endregion
+    
+    #region Import/Export
+
+    private const string Term = "Term";
+    private const string Variations = "Linguistic Variations";
+    private const string Notes = "Notes";
+    private const string Id = "ID";
+    private const string Definition = "Definition";
+    private const string PartOfSpeech = "Part Of Speech";
+    private const string CaseSensitive = "Case Sensitive";
+    private const string ExactMatch = "Exact Match";
+    private const string LabelNames = "Label Names";
+    
+    [Action("Export glossary", Description = "Export a glossary.")]
+    public async Task<GlossaryResponse> ExportGlossary([ActionParameter] GlossaryIdentifier glossaryIdentifier,
+        [ActionParameter] ExportGlossaryRequest input)
+    {
+        var glossary = await GetGlossaryAsync(glossaryIdentifier);
+        var locales = input.LocaleIds ?? glossary.LocaleIds;
+        
+        object? modifiedFilter;
+        var after = input.GlossaryEntriesModifiedAfter;
+        var before = input.GlossaryEntriesModifiedBefore;
+
+        switch (after, before)
+        {
+            case (null, null):
+                modifiedFilter = null;
+                break;
+
+            case var dates when dates.after != null && dates.before != null:
+                modifiedFilter = new
+                {
+                    type = "date_range",
+                    level = "ANY",
+                    from = dates.after,
+                    to = dates.before
+                };
+                break;
+
+            case var dates when dates.after != null:
+                modifiedFilter = new
+                {
+                    type = "after",
+                    level = "ANY",
+                    date = dates.after
+                };
+                break;
+
+            default:
+                modifiedFilter = new
+                {
+                    type = "before",
+                    level = "ANY",
+                    date = before
+                };
+                break;
+        }
+        
+        var request =
+            new SmartlingRequest(
+                $"/glossary-api/v3/accounts/{_accountUid}/glossaries/{glossaryIdentifier.GlossaryUid}/entries/download",
+                Method.Post).WithJsonBody(new
+            {
+                format = "CSV",
+                localeIds = locales,
+                skipEntries = false,
+                filter = new
+                {
+                    entryState = input.EntriesState ?? "ACTIVE",
+                    returnFallbackTranslations = input.ReturnFallbackTranslations ?? false,
+                    labels = input.LabelIds == null
+                        ? null
+                        : new
+                        {
+                            type = "associated",
+                            labelUids = input.LabelIds
+                        },
+                    lastModified = modifiedFilter,
+                    sorting = new
+                    {
+                        direction = "ASC",
+                        field = "term"
+                    }
+                }
+            });
+
+        var response = await Client.ExecuteWithErrorHandling(request);
+
+        await using var csvMemoryStream = new MemoryStream(response.RawBytes);
+        var parsedCsv = await csvMemoryStream.ParseCsvFile();
+        
+        var glossaryConceptEntries = new List<GlossaryConceptEntry>();
+
+        var entriesCount = parsedCsv.First().Value.Count;
+        
+        for (var i = 0; i < entriesCount; i++)
+        {
+            string entryId = string.Empty;
+            string? entryDefinition = null;
+            PartOfSpeech? partOfSpeech = null;
+            List<string>? entryNotes = null;
+            
+            var languageSections = new List<GlossaryLanguageSection>();
+        
+            foreach (var column in parsedCsv)
+            {
+                var columnName = column.Key;
+                var columnValues = column.Value;
+                
+                switch (columnName)
+                {
+                    case Id:
+                        entryId = string.IsNullOrWhiteSpace(columnValues[i])
+                            ? Guid.NewGuid().ToString()
+                            : columnValues[i].Trim();
+                        
+                        break;
+                    
+                    case Definition:
+                        entryDefinition = string.IsNullOrWhiteSpace(columnValues[i]) ? null : columnValues[i].Trim();
+                        break;
+                    
+                    case PartOfSpeech:
+                        if (Enum.TryParse(columnValues[i].Replace(" ", string.Empty),
+                                out PartOfSpeech partOfSpeechValue))
+                            partOfSpeech = partOfSpeechValue;
+                        
+                        break;
+                    
+                    case LabelNames:
+                        entryNotes = string.IsNullOrWhiteSpace(columnValues[i])
+                            ? null
+                            : new List<string>(new[] { $"Labels: {columnValues[i]}" });
+                        
+                        break;
+                    
+                    case var languageTerm when new Regex($@"^{Term}.*\[(\w{{2}}-\w{{2}})\]").IsMatch(languageTerm):
+                        var languageCode = new Regex($@"^{Term}.*\[(\w{{2}}-\w{{2}})\]").Match(languageTerm).Groups[1]
+                            .Value.ToLower();
+                        
+                        if (!string.IsNullOrWhiteSpace(columnValues[i]))
+                            languageSections.Add(new(languageCode,
+                                new List<GlossaryTermSection>(new GlossaryTermSection[]
+                                    { new(columnValues[i].Trim()) { PartOfSpeech = partOfSpeech } })));
+                        
+                        break;
+                    
+                    case var termVariations when new Regex($@"^{Variations}.*\[(\w{{2}}-\w{{2}})\]").IsMatch(termVariations):
+                            if (!string.IsNullOrWhiteSpace(columnValues[i]))
+                            {
+                                languageCode = new Regex($@"^{Variations}.*\[(\w{{2}}-\w{{2}})\]")
+                                    .Match(termVariations).Groups[1].Value.ToLower();
+
+                                var targetLanguageSectionIndex =
+                                    languageSections.FindIndex(section => section.LanguageCode == languageCode);
+
+                                var terms = columnValues[i]
+                                    .Split(',')
+                                    .Select(term => new GlossaryTermSection(term.Trim())
+                                        { PartOfSpeech = partOfSpeech });
+
+                                if (targetLanguageSectionIndex == -1)
+                                    languageSections.Add(new(languageCode, new List<GlossaryTermSection>(terms)));
+                                else
+                                    languageSections[targetLanguageSectionIndex].Terms.AddRange(terms);
+                            }
+
+                            break;
+
+                    case var termNotes when new Regex($@"^{Notes}.*\[(\w{{2}}-\w{{2}})\]").IsMatch(termNotes):
+                        if (!string.IsNullOrWhiteSpace(columnValues[i]))
+                        {
+                            languageCode = new Regex($@"^{Notes}.*\[(\w{{2}}-\w{{2}})\]").Match(termNotes)
+                                .Groups[1].Value.ToLower();
+
+                            var targetLanguageSectionIndex =
+                                languageSections.FindIndex(section => section.LanguageCode == languageCode);
+
+                            languageSections[targetLanguageSectionIndex].Terms.First().Notes =
+                                new List<string>(new[] { columnValues[i] });
+                        }
+
+                        break;
+                        
+                    case var termCaseSensitive when new Regex($@"^{CaseSensitive}.*\[(\w{{2}}-\w{{2}})\]").IsMatch(termCaseSensitive):
+                        if (bool.TryParse(columnValues[i], out var caseSensitive))
+                        {
+                            languageCode = new Regex($@"^{CaseSensitive}.*\[(\w{{2}}-\w{{2}})\]")
+                                .Match(termCaseSensitive).Groups[1].Value.ToLower();
+
+                            var caseSensitivity = caseSensitive
+                                ? CaseSensitivity.CaseSensitive
+                                : CaseSensitivity.CaseInsensitive;
+
+                            var targetLanguageSectionIndex =
+                                languageSections.FindIndex(section => section.LanguageCode == languageCode);
+
+                            foreach (var term in languageSections[targetLanguageSectionIndex].Terms)
+                            {
+                                term.CaseSensitivity = caseSensitivity;
+                            }
+                        }
+
+                        break;
+                    
+                    case var termExactMatch when new Regex($@"^{ExactMatch}.*\[(\w{{2}}-\w{{2}})\]").IsMatch(termExactMatch):
+                        if (bool.TryParse(columnValues[i], out var exactMatch))
+                        {
+                            languageCode = new Regex($@"^{ExactMatch}.*\[(\w{{2}}-\w{{2}})\]")
+                                .Match(termExactMatch).Groups[1].Value.ToLower();
+                            
+                            var targetLanguageSectionIndex =
+                                languageSections.FindIndex(section => section.LanguageCode == languageCode);
+
+                            foreach (var term in languageSections[targetLanguageSectionIndex].Terms)
+                            {
+                                term.ExactMatch = exactMatch;
+                            }
+                        }
+
+                        break;
+                }
+            }
+        
+            var entry = new GlossaryConceptEntry(entryId, languageSections)
+            {
+                Definition = entryDefinition,
+                Notes = entryNotes,
+            };
+            glossaryConceptEntries.Add(entry);
+        }
+
+        var title = input.Title ?? glossary.GlossaryName;
+        var description = !string.IsNullOrWhiteSpace(input.SourceDescription ?? glossary.Description)
+            ? input.SourceDescription ?? glossary.Description
+            : $"Glossary export from Smartling on {DateTime.Now.ToLocalTime().ToString("F")}";
+        
+        var exportedGlossary = new Glossary(glossaryConceptEntries)
+        {
+            Title = title,
+            SourceDescription = description
+        };
+
+        await using var glossaryStream = exportedGlossary.ConvertToTbx();
+        var glossaryFileReference = 
+            await _fileManagementClient.UploadAsync(glossaryStream, MediaTypeNames.Text.Xml, $"{title}.tbx");
+        return new(glossaryFileReference);
     }
 
     #endregion

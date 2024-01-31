@@ -9,7 +9,7 @@ public class AddGlossaryEntryTranslationRequest
     [Display("Term translation")]
     public string Term { get; set; }
 
-    [Display("Term translation locale")]
+    [Display("Term translation locale ID")]
     [DataSource(typeof(GlossaryTermLocaleDataSourceHandler))]
     public string TermLocaleId { get; set; }
 

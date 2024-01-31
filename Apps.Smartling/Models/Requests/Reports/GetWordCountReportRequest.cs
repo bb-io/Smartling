@@ -12,11 +12,11 @@ public class GetWordCountReportRequest
     [Display("End date (without time)")]
     public DateTime? EndDate { get; set; }
     
-    [Display("Jobs")]
+    [Display("Job IDs")]
     [DataSource(typeof(JobDataSourceHandler))]
     public IEnumerable<string>? JobUids { get; set; }
     
-    [Display("Target locales")]
+    [Display("Target locale IDs")]
     [DataSource(typeof(TargetLocaleDataSourceHandler))]
     public IEnumerable<string>? TargetLocaleIds { get; set; }
 }

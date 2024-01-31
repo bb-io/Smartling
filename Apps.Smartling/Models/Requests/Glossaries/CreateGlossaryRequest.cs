@@ -11,7 +11,7 @@ public class CreateGlossaryRequest
     
     public string? Description { get; set; }
     
-    [Display("Locales")]
-    [DataSource(typeof(GlossaryLocaleDataSourceHandler))]
+    [Display("Locale IDs")]
+    [DataSource(typeof(AccountAvailableLocaleDataSourceHandler))]
     public IEnumerable<string> LocaleIds { get; set; }
 }
