@@ -17,15 +17,15 @@ public class SearchGlossaryEntriesRequest
     [DataSource(typeof(EntryStateDataSourceHandler))]
     public string? EntryState { get; set; }
     
-    [Display("Missing translation locale")]
+    [Display("Missing translation locale ID")]
     [DataSource(typeof(GlossaryTermLocaleDataSourceHandler))]
     public string? MissingTranslationLocaleId { get; set; }
     
-    [Display("Present translation locale")]
+    [Display("Present translation locale ID")]
     [DataSource(typeof(GlossaryTermLocaleDataSourceHandler))]
     public string? PresentTranslationLocaleId { get; set; }
     
-    [Display("Do not translate (DNT) locale")]
+    [Display("Do not translate (DNT) locale ID")]
     [DataSource(typeof(GlossaryTermLocaleDataSourceHandler))]
     public string? DntLocaleId { get; set; }
     
