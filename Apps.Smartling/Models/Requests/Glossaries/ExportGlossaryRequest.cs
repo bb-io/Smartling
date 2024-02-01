@@ -7,10 +7,11 @@ namespace Apps.Smartling.Models.Requests.Glossaries;
 
 public class ExportGlossaryRequest
 {
-    [Display("Title")]
+    [Display("Title", Description = "The name of the exported glossary.")]
     public string? Title { get; set; }
     
-    [Display("Source description")]
+    [Display("Source description", Description = "Information or metadata about the source or origin of the " +
+                                                 "terminology data contained in the glossary.")]
     public string? SourceDescription { get; set; }
     
     [Display("Locale IDs")]
