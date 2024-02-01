@@ -558,6 +558,7 @@ public class GlossaryActions : SmartlingInvocable
         initializeGlossaryImportRequest.AddFile("importFile", csvBytes, $"{blackbirdGlossary.Title}.csv");
         initializeGlossaryImportRequest.AddParameter("importFileName", $"{blackbirdGlossary.Title}.csv");
         initializeGlossaryImportRequest.AddParameter("importFileMediaType", "text/csv");
+        initializeGlossaryImportRequest.AddParameter("archiveMode", input.ArchiveExistingEntries ?? false);
 
         var initializeGlossaryImportResponse =
             await Client.ExecuteWithErrorHandling<ResponseWrapper<InitializeGlossaryImportResponse>>(
