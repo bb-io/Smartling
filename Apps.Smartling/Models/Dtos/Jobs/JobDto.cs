@@ -5,7 +5,7 @@ namespace Apps.Smartling.Models.Dtos.Jobs;
 
 public class JobDto
 {
-    [Display("Job")]
+    [Display("Job ID")]
     public string TranslationJobUid { get; set; }
     
     [Display("Job name")]
@@ -16,7 +16,7 @@ public class JobDto
     
     public string? Description { get; set; }
     
-    [Display("Target locales")]
+    [Display("Target locale IDs")]
     public IEnumerable<string>? TargetLocaleIds { get; set; }
     
     [Display("Due date")]
@@ -40,10 +40,10 @@ public class JobDto
     [Display("Date of last modification")]
     public DateTime ModifiedDate { get; set; }
     
-    [Display("Created by user")]
+    [Display("Created by user ID")]
     public string CreatedByUserUid { get; set; }
     
-    [Display("Modified by user")]
+    [Display("Modified by user ID")]
     public string ModifiedByUserUid { get; set; }
     
     [Display("First completed date")]

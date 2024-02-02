@@ -35,14 +35,14 @@ public class SearchIssuesRequest
     [DataSource(typeof(IssueTypeCodeDataSourceHandler))]
     public string? IssueTypeCode { get; set; }
 
-    [Display("Assignee")]
+    [Display("Assignee ID")]
     [DataSource(typeof(AssigneeDataSourceHandler))]
     public string? AssigneeUserUid { get; set; }
     
     [Display("Has comments")]
     public bool? HasComments { get; set; }
     
-    [Display("Jobs")]
+    [Display("Job IDs")]
     [DataSource(typeof(JobDataSourceHandler))]
     public IEnumerable<string>? JobIds { get; set; }
     

@@ -7,13 +7,13 @@ public class WordCountReportDto
     [Display("Account name")]
     public string AccountName { get; set; }
 
-    [Display("Account unique identifier")]
+    [Display("Account ID")]
     public string? AccountUid { get; set; }
 
     [Display("Agency name")]
     public string? AgencyName { get; set; }
 
-    [Display("Agency unique identifier")]
+    [Display("Agency ID")]
     public string? AgencyUid { get; set; }
 
     [Display("Fuzzy match profile name")]
@@ -25,10 +25,10 @@ public class WordCountReportDto
     [Display("Job name")]
     public string JobName { get; set; }
 
-    [Display("Job unique identifier")]
+    [Display("Job ID")]
     public string JobUid { get; set; }
 
-    [Display("Target locale identifier")]
+    [Display("Target locale ID")]
     public string? TargetLocaleId { get; set; }
 
     [Display("Target locale description")]
@@ -37,7 +37,7 @@ public class WordCountReportDto
     [Display("Translation resource name")]
     public string TranslationResourceName { get; set; }
 
-    [Display("Translation resource unique identifier")]
+    [Display("Translation resource ID")]
     public string TranslationResourceUid { get; set; }
 
     [Display("Number of weighted words")]
@@ -52,7 +52,7 @@ public class WordCountReportDto
     [Display("Workflow step type")]
     public string? WorkflowStepType { get; set; }
 
-    [Display("Workflow step unique identifier")]
+    [Display("Workflow step ID")]
     public string? WorkflowStepUid { get; set; }
 
     [Display("Workflow step name")]

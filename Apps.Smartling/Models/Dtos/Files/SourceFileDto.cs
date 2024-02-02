@@ -9,12 +9,12 @@ public class SourceFileDto
     [Display("File URI")]
     public string Uri { get; set; }
     
-    [Display("File unique identifier")]
+    [Display("File ID")]
     public string FileUid { get; set; }
 }
 
 public class SourceFileWithLocalesDto : SourceFileDto
 {
-    [Display("Locales")]
+    [Display("Locale IDs")]
     public IEnumerable<string> LocaleIds { get; set; }
 }

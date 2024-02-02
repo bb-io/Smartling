@@ -4,10 +4,10 @@ namespace Apps.Smartling.Models.Dtos.Glossaries;
 
 public class GlossaryDto
 {
-    [Display("Glossary")]
+    [Display("Glossary ID")]
     public string GlossaryUid { get; set; }
     
-    [Display("Account unique identifier")]
+    [Display("Account ID")]
     public string AccountUid { get; set; }
     
     [Display("Glossary name")]
@@ -20,10 +20,10 @@ public class GlossaryDto
     [Display("Verification mode")]
     public bool VerificationMode { get; set; }
     
-    [Display("Created by user")]
+    [Display("Created by user ID")]
     public string CreatedByUserUid { get; set; }
     
-    [Display("Modified by user")]
+    [Display("Modified by user ID")]
     public string ModifiedByUserUid { get; set; }
     
     [Display("Date of creation")]
@@ -32,7 +32,7 @@ public class GlossaryDto
     [Display("Date of last modification")]
     public DateTime ModifiedDate { get; set; }
     
-    [Display("Locales")]
+    [Display("Locale IDs")]
     public IEnumerable<string> LocaleIds { get; set; }
     
     [Display("Fallback locales")]

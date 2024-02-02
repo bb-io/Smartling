@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Net.Mime;
 using Apps.Smartling.Api;
 using Apps.Smartling.Models;
 using Apps.Smartling.Models.Dtos;
@@ -64,15 +65,23 @@ public class FileActions : SmartlingInvocable
     {
         var endpoint = $"/files-api/v2/projects/{ProjectId}/locales/all/file/zip?fileUri={fileIdentifier.FileUri}";
         var zip = await DownloadFile(endpoint);
-        var files = await _fileManagementClient.DownloadAsync(zip).Result.GetByteData().Result.GetFilesFromZip(_fileManagementClient);
+        var files = await (await _fileManagementClient.DownloadAsync(zip)).GetFilesFromZip();
         var resultFiles = new List<FileWrapper>();
 
         foreach (var file in files)
         {
-            var locale = file.Path.Split("/")[0];
-            var resultFilename = CreateNameForTranslatedFile(file.File.Name, locale);
-            file.File.Name = resultFilename;
-            resultFiles.Add(new() { File = file.File });
+            var splitPath = file.Path.Split("/");
+            var locale = splitPath[0];
+            var filename = splitPath[^1];
+            var resultFilename = CreateNameForTranslatedFile(filename, locale);
+
+            if (!MimeTypes.TryGetMimeType(resultFilename, out var contentType))
+                contentType = MediaTypeNames.Application.Octet;
+
+            var fileReference = await _fileManagementClient.UploadAsync(file.FileStream, contentType, resultFilename);
+            resultFiles.Add(new() { File = fileReference });
+            
+            file.Dispose();
         }
         
         return new(resultFiles);

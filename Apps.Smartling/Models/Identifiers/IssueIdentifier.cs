@@ -6,7 +6,7 @@ namespace Apps.Smartling.Models.Identifiers;
 
 public class IssueIdentifier
 {
-    [Display("Issue")]
+    [Display("Issue ID")]
     [DataSource(typeof(IssueDataSourceHandler))]
     public string IssueUid { get; set; }
 }

@@ -6,7 +6,7 @@ namespace Apps.Smartling.Models.Identifiers;
 
 public class WorkflowIdentifier
 {
-    [Display("Workflow")]
+    [Display("Workflow ID")]
     [DataSource(typeof(WorkflowDataSourceHandler))]
     public string? WorkflowUid { get; set; }
 }

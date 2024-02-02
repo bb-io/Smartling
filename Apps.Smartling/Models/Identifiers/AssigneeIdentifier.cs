@@ -6,7 +6,7 @@ namespace Apps.Smartling.Models.Identifiers;
 
 public class AssigneeIdentifier
 {
-    [Display("Assignee")]
+    [Display("Assignee ID")]
     [DataSource(typeof(AssigneeDataSourceHandler))]
     public string? AssigneeUserUid { get; set; }
 }

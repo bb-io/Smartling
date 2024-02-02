@@ -4,10 +4,10 @@ namespace Apps.Smartling.Models.Dtos.Strings;
 
 public class StringTranslationsDto : StringDto
 {
-    [Display("Target locale")]
+    [Display("Target locale ID")]
     public string TargetLocaleId { get; set; }
     
-    [Display("Workflow step")]
+    [Display("Workflow step ID")]
     public string WorkflowStepUid { get; set; }
     
     public IEnumerable<StringTranslationDto>? Translations { get; set; } 

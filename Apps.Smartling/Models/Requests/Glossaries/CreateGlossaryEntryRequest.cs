@@ -9,7 +9,7 @@ public class CreateGlossaryEntryRequest
 {
     public string Term { get; set; }
 
-    [Display("Term locale")]
+    [Display("Term locale ID")]
     [DataSource(typeof(GlossaryTermLocaleDataSourceHandler))]
     public string TermLocaleId { get; set; }
     

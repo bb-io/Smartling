@@ -84,6 +84,8 @@ Before you can connect you need to make sure that:
 - **Update glossary** updates an existing glossary. Specify only fields that need to be updated. Specifying the _Locales_ parameter overrides the existing locales. To simply add more locales to the existing list, use the **Add locales to glossary** action.
 - **Add locales to glossary**.
 - **Add fallback locale to glossary**. You can read about fallback locales [here](https://help.smartling.com/hc/en-us/articles/4408673919643).
+- **Import glossary** allows you to import a glossary, creating a new one, or importing data into an existing glossary. If you wish to import data into an existing glossary, you should set an optional _Glossary ID_ input parameter. This action does not override existing data; instead, it adds new entries to the existing glossary. You can optionally set the _Archive existing entries_ input parameter to _True_ to archive entries that are not in the import file.
+- **Export glossary** allows you to export an existing glossary. You can apply optional input parameters to filter the entries included in the export.
 - **Get glossary entry**.
 - **Search glossary entries** lists glossary entries that match the specified filter options. If no parameters are specified, all glossary entries will be returned.
 - **Create glossary entry** creates a glossary entry along with its definition and original term.
