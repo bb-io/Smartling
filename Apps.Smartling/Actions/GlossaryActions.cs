@@ -142,6 +142,7 @@ public class GlossaryActions : SmartlingInvocable
     private const string CaseSensitive = "Case Sensitive";
     private const string ExactMatch = "Exact Match";
     private const string LabelNames = "Label Names";
+    private const string ColumnNamePattern = @"^{0}.*\[(\w{{2}}(-\w{{2}})?)\]";
     
     [Action("Export glossary", Description = "Export a glossary.")]
     public async Task<GlossaryResponse> ExportGlossary([ActionParameter] GlossaryIdentifier glossaryIdentifier,
@@ -267,8 +268,8 @@ public class GlossaryActions : SmartlingInvocable
                         
                         break;
                     
-                    case var languageTerm when new Regex($@"^{Term}.*\[(\w{{2}}-\w{{2}})\]").IsMatch(languageTerm):
-                        var languageCode = new Regex($@"^{Term}.*\[(\w{{2}}-\w{{2}})\]").Match(languageTerm).Groups[1]
+                    case var languageTerm when new Regex(string.Format(ColumnNamePattern, Term)).IsMatch(languageTerm):
+                        var languageCode = new Regex(string.Format(ColumnNamePattern, Term)).Match(languageTerm).Groups[1]
                             .Value.ToLower();
                         
                         if (!string.IsNullOrWhiteSpace(columnValues[i]))
@@ -278,10 +279,10 @@ public class GlossaryActions : SmartlingInvocable
                         
                         break;
                     
-                    case var termVariations when new Regex($@"^{Variations}.*\[(\w{{2}}-\w{{2}})\]").IsMatch(termVariations):
+                    case var termVariations when new Regex(string.Format(ColumnNamePattern, Variations)).IsMatch(termVariations):
                             if (!string.IsNullOrWhiteSpace(columnValues[i]))
                             {
-                                languageCode = new Regex($@"^{Variations}.*\[(\w{{2}}-\w{{2}})\]")
+                                languageCode = new Regex(string.Format(ColumnNamePattern, Variations))
                                     .Match(termVariations).Groups[1].Value.ToLower();
 
                                 var targetLanguageSectionIndex =
@@ -300,10 +301,10 @@ public class GlossaryActions : SmartlingInvocable
 
                             break;
 
-                    case var termNotes when new Regex($@"^{Notes}.*\[(\w{{2}}-\w{{2}})\]").IsMatch(termNotes):
+                    case var termNotes when new Regex(string.Format(ColumnNamePattern, Notes)).IsMatch(termNotes):
                         if (!string.IsNullOrWhiteSpace(columnValues[i]))
                         {
-                            languageCode = new Regex($@"^{Notes}.*\[(\w{{2}}-\w{{2}})\]").Match(termNotes)
+                            languageCode = new Regex(string.Format(ColumnNamePattern, Notes)).Match(termNotes)
                                 .Groups[1].Value.ToLower();
 
                             var targetLanguageSectionIndex =
@@ -315,10 +316,10 @@ public class GlossaryActions : SmartlingInvocable
 
                         break;
                         
-                    case var termCaseSensitive when new Regex($@"^{CaseSensitive}.*\[(\w{{2}}-\w{{2}})\]").IsMatch(termCaseSensitive):
+                    case var termCaseSensitive when new Regex(string.Format(ColumnNamePattern, CaseSensitive)).IsMatch(termCaseSensitive):
                         if (bool.TryParse(columnValues[i], out var caseSensitive))
                         {
-                            languageCode = new Regex($@"^{CaseSensitive}.*\[(\w{{2}}-\w{{2}})\]")
+                            languageCode = new Regex(string.Format(ColumnNamePattern, CaseSensitive))
                                 .Match(termCaseSensitive).Groups[1].Value.ToLower();
 
                             var caseSensitivity = caseSensitive
@@ -336,10 +337,10 @@ public class GlossaryActions : SmartlingInvocable
 
                         break;
                     
-                    case var termExactMatch when new Regex($@"^{ExactMatch}.*\[(\w{{2}}-\w{{2}})\]").IsMatch(termExactMatch):
+                    case var termExactMatch when new Regex(string.Format(ColumnNamePattern, ExactMatch)).IsMatch(termExactMatch):
                         if (bool.TryParse(columnValues[i], out var exactMatch))
                         {
-                            languageCode = new Regex($@"^{ExactMatch}.*\[(\w{{2}}-\w{{2}})\]")
+                            languageCode = new Regex(string.Format(ColumnNamePattern, ExactMatch))
                                 .Match(termExactMatch).Groups[1].Value.ToLower();
                             
                             var targetLanguageSectionIndex =
@@ -375,6 +376,7 @@ public class GlossaryActions : SmartlingInvocable
         };
 
         await using var glossaryStream = exportedGlossary.ConvertToTbx();
+        
         var glossaryFileReference = 
             await _fileManagementClient.UploadAsync(glossaryStream, MediaTypeNames.Text.Xml, $"{title}.tbx");
         return new(glossaryFileReference);
@@ -485,7 +487,7 @@ public class GlossaryActions : SmartlingInvocable
             return value;
         }
 
-        var glossaryStream = await _fileManagementClient.DownloadAsync(input.Glossary);
+        await using var glossaryStream = await _fileManagementClient.DownloadAsync(input.Glossary);
         var blackbirdGlossary = await glossaryStream.ConvertFromTbx();
         
         var localesPresent = blackbirdGlossary.ConceptEntries
