@@ -225,7 +225,10 @@ public class GlossaryActions : SmartlingInvocable
         
         var glossaryConceptEntries = new List<GlossaryConceptEntry>();
 
-        var entriesCount = parsedCsv.First().Value.Count;
+        var entriesCount =
+            !EqualityComparer<KeyValuePair<string, List<string>>>.Default.Equals(parsedCsv.FirstOrDefault(), default)
+                ? parsedCsv.FirstOrDefault().Value.Count
+                : 0;
         
         for (var i = 0; i < entriesCount; i++)
         {
