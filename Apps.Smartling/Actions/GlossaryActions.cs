@@ -474,21 +474,6 @@ public class GlossaryActions : SmartlingInvocable
 
         static string SplitCamelCase(string input)
             => Regex.Replace(input, "([a-z])([A-Z])", "$1 $2");
-        
-        static string EscapeString(string value)
-        {
-            const string quote = "\"";
-            const string escapedQuote = "\"\"";
-            char[] charactersThatMustBeQuoted = { ',', '"', '\n' };
-            
-            if (value.Contains(quote))
-                value = value.Replace(quote, escapedQuote);
-
-            if (value.IndexOfAny(charactersThatMustBeQuoted) > -1)
-                value = quote + value + quote;
-
-            return value;
-        }
 
         await using var glossaryStream = await _fileManagementClient.DownloadAsync(input.Glossary);
         var blackbirdGlossary = await glossaryStream.ConvertFromTbx();
@@ -543,18 +528,10 @@ public class GlossaryActions : SmartlingInvocable
                 SplitCamelCase(entry.LanguageSections.First().Terms.First().PartOfSpeech?.ToString() ?? string.Empty)
             }.Concat(languageRelatedValues)));
         }
-        
-        await using var csvStream = new MemoryStream();
-        await using var writer = new StreamWriter(csvStream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
-        foreach (var row in rowsToAdd)
-        {
-            await writer.WriteLineAsync(string.Join(',', row.Select(EscapeString)));
-        }
+        await using var csvStream =
+            await rowsToAdd.ConvertToCsv(new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), ',');
         
-        await writer.FlushAsync();
-        
-        csvStream.Position = 0;
         var csvBytes = await csvStream.GetByteData();
 
         var initializeGlossaryImportRequest =
