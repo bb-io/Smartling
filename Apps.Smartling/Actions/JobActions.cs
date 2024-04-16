@@ -31,6 +31,16 @@ public class JobActions : SmartlingInvocable
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<JobDto>>(request);
         var job = response.Response.Data;
         return job;
+    }  
+    
+    [Action("List job schedule items", Description = "List all schedule items for a specific job..")]
+    public async Task<ListScheduleItemsResponse> ListJobScheduleItems([ActionParameter] JobIdentifier jobIdentifier)
+    {
+        var endpoint = $"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}/schedule";
+        var request = new SmartlingRequest(endpoint, Method.Get);
+       
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<ScheduleItemDto>>>(request);
+        return new(response.Response.Data.Items);
     }
 
     [Action("Search jobs", Description = "List jobs that match the specified filter options. If no parameters are " +
