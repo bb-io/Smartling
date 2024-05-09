@@ -63,6 +63,7 @@ Before you can connect you need to make sure that:
 - **Remove string from job**.
 - **List all source strings for file**.
 - **Get source string by hashcode** retrieves a single source string with a specified hashcode, which is the unique identifier for the string.
+- **List strings in file**.
 - **List translations for strings in file**.
 - **List translations for string by hashcode**.
 
