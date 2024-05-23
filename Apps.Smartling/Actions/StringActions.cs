@@ -185,7 +185,7 @@ public class StringActions : SmartlingInvocable
             offset += limitPerRequest;
         } while (response.Response.Data.TotalCount == limitPerRequest);
 
-        return new ListStringsInJobResponse { Translations = stringTranslations};
+        return new ListStringsInJobResponse { Translations = stringTranslations, TotalCount = stringTranslations.Count};
 
     }
 

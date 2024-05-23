@@ -6,7 +6,7 @@
         <Nullable>enable</Nullable>
         <Product>Smartling</Product>
         <Description>Cloud-based translation management platform that helps businesses efficiently translate and localize content, optimizing global communication strategies through automation and centralized management</Description>
-        <Version>1.5.4</Version>
+        <Version>1.5.5</Version>
         <AssemblyName>Apps.Smartling</AssemblyName>
     </PropertyGroup>
 
