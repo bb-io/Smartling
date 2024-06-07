@@ -171,7 +171,7 @@ public class StringActions : SmartlingInvocable
     [Action("List strings in job", Description = "Gets all the translation strings in a job.")]
     public async Task<ListStringsInJobResponse> ListStringsInJob([ActionParameter] JobIdentifier jobIdentifier)
     {
-        const int limitPerRequest = 500;
+        const int limitPerRequest = 1000;
         var offset = 0;
         var stringTranslations = new List<StringHashcodeLocaleDto>();
         ResponseWrapper<ItemsWrapper<StringHashcodeLocaleDto>> response;
