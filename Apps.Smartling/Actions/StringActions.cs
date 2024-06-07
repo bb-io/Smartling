@@ -4,6 +4,7 @@ using Apps.Smartling.Models.Dtos;
 using Apps.Smartling.Models.Dtos.Jobs;
 using Apps.Smartling.Models.Dtos.Strings;
 using Apps.Smartling.Models.Identifiers;
+using Apps.Smartling.Models.Requests.Jobs;
 using Apps.Smartling.Models.Requests.Strings;
 using Apps.Smartling.Models.Responses;
 using Apps.Smartling.Models.Responses.Strings;
@@ -169,9 +170,9 @@ public class StringActions : SmartlingInvocable
     }
 
     [Action("List strings in job", Description = "Gets all the translation strings in a job.")]
-    public async Task<ListStringsInJobResponse> ListStringsInJob([ActionParameter] JobIdentifier jobIdentifier)
+    public async Task<ListStringsInJobResponse> ListStringsInJob([ActionParameter] JobIdentifier jobIdentifier, [ActionParameter] ListStringsRequest input)
     {
-        const int limitPerRequest = 500;
+        const int limitPerRequest = 1000;
         var offset = 0;
         var stringTranslations = new List<StringHashcodeLocaleDto>();
         ResponseWrapper<ItemsWrapper<StringHashcodeLocaleDto>> response;
@@ -180,6 +181,10 @@ public class StringActions : SmartlingInvocable
         {
             var request = new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}/strings?offset={offset}",
             Method.Get);
+            if (input.targetLocaleId != null) 
+            {
+                request.AddQueryParameter("targetLocaleId", input.targetLocaleId);
+            }
             response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<StringHashcodeLocaleDto>>>(request);
             stringTranslations.AddRange(response.Response.Data.Items);
             offset += limitPerRequest;
