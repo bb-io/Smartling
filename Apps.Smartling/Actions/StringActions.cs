@@ -179,7 +179,7 @@ public class StringActions : SmartlingInvocable
 
         do
         {
-            var request = new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}/strings?offset={offset}",
+            var request = new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}/strings?offset={offset}&limit={limitPerRequest}",
             Method.Get);
             if (input.targetLocaleId != null) 
             {
@@ -188,7 +188,7 @@ public class StringActions : SmartlingInvocable
             response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<StringHashcodeLocaleDto>>>(request);
             stringTranslations.AddRange(response.Response.Data.Items);
             offset += limitPerRequest;
-        } while (response.Response.Data.TotalCount == limitPerRequest);
+        } while (response.Response.Data.TotalCount > stringTranslations.Count);
 
         return new ListStringsInJobResponse { Translations = stringTranslations, TotalCount = stringTranslations.Count};
 
