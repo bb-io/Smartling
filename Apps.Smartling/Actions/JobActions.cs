@@ -3,6 +3,7 @@ using Apps.Smartling.Constants;
 using Apps.Smartling.Models.Dtos;
 using Apps.Smartling.Models.Dtos.Jobs;
 using Apps.Smartling.Models.Identifiers;
+using Apps.Smartling.Models.Requests;
 using Apps.Smartling.Models.Requests.Jobs;
 using Apps.Smartling.Models.Responses;
 using Apps.Smartling.Models.Responses.Jobs;
@@ -32,6 +33,21 @@ public class JobActions : SmartlingInvocable
         var job = response.Response.Data;
         return job;
     }  
+    
+    [Action("Get job word count", Description = "Get the word count of a job.")]
+    public async Task<WordCountResponse> GetJobWordCount([ActionParameter] JobIdentifier jobIdentifier,
+        [ActionParameter] DatesOptionalRequest datesOptionalRequest)
+    {
+        var startDate = datesOptionalRequest.StartDate?.ToString("yyyy-MM-dd") ?? DateTime.Parse("2024-01-01").ToString("yyyy-MM-dd");
+        var endDate = datesOptionalRequest.EndDate?.ToString("yyyy-MM-dd") ?? DateTime.Now.ToString("yyyy-MM-dd");
+        
+        var request = new SmartlingRequest($"/reports-api/v3/word-count?startDate={startDate}&endDate={endDate}&jobUids={jobIdentifier.TranslationJobUid}", 
+            Method.Get);
+        
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<WordCountDto>>>(request);
+        var wordCountResponse = WordCountResponse.CreateFromDtos(response.Response.Data.Items);
+        return wordCountResponse;
+    }
     
     [Action("List job schedule items", Description = "List all schedule items for a specific job..")]
     public async Task<ListScheduleItemsResponse> ListJobScheduleItems([ActionParameter] JobIdentifier jobIdentifier)
