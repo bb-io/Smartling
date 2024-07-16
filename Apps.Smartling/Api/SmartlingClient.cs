@@ -47,4 +47,18 @@ public class SmartlingClient : BlackBirdRestClient
             .AccessToken;
         return accessToken;
     }
+
+    public virtual async Task<AsyncProcessResult> ExecuteAsyncProcessWithHandling(RestRequest request, string projectId)
+    {
+        var content = await ExecuteWithErrorHandling<AsyncProcessDto>(request);
+        var checkAsyncResultRequest = new SmartlingRequest($"/context-api/v2/projects/{projectId}/processes/{content.ProcessUid}", Method.Get);
+
+        while (true)
+        {
+            var asyncProcessResult = await this.ExecuteWithErrorHandling<ResponseWrapper<AsyncProcessResult>>(checkAsyncResultRequest);
+            if (asyncProcessResult.Response.Data.ProcessState != "IN_PROGRESS")
+                return asyncProcessResult.Response.Data;
+            await Task.Delay(1000);
+        }
+    }
 }
