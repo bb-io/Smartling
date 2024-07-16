@@ -21,7 +21,7 @@ namespace Apps.Smartling.DataSourceHandlers
             var jobs = searchProjectContextResponse
                 .Where(prContext => context.SearchString == null
                               || prContext.Name.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase))
-                .ToDictionary(prContext => prContext.ContextUid, job => job.Name);
+                .ToDictionary(prContext => prContext.ContextUid, job => $"{job.Name} ({job.Created})");
             return jobs;
         }
     }
