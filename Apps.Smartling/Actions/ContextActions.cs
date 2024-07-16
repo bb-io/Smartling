@@ -8,6 +8,8 @@ using RestSharp;
 using Apps.Smartling.Models.Requests.Context;
 using Blackbird.Applications.Sdk.Utils.Extensions.Files;
 using Apps.Smartling.Models.Dtos.Contexts;
+using System.Net.Mime;
+using Blackbird.Applications.Sdk.Common.Files;
 
 namespace Apps.Smartling.Actions;
 
@@ -54,5 +56,18 @@ public class ContextActions : SmartlingInvocable
         var searchProjectContextResponse =
             await Client.Paginate<ProjectContextDto>(searchProjectContextRequest);
         return searchProjectContextResponse;
+    }
+
+    [Action("Download project context", Description = "Download project context")]
+    public async Task<FileReference> DownloadProjectContext([ActionParameter] GetProjectContextRequest getProjectContext)
+    {
+        var downloadProjectContextRequest = new SmartlingRequest($"/context-api/v2/projects/{ProjectId}/contexts/{getProjectContext.ContextUid}/content", Method.Get);
+        
+        var downloadProjectContextResponse = await Client.ExecuteAsync(downloadProjectContextRequest);
+        using var contextStream = new MemoryStream(downloadProjectContextResponse.RawBytes); 
+        
+        var projectContextFileReference =
+           await _fileManagementClient.UploadAsync(contextStream, downloadProjectContextResponse.ContentType, $"context");
+        return projectContextFileReference;
     }
 }
