@@ -5,9 +5,9 @@ namespace Apps.Smartling.Models.Requests.Context
 {
     public class SearchProjectContextRequest
     {
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         [StaticDataSource(typeof(ContextTypeDataSourceHandler))]
-        public string Type { get; set; }
+        public string? Type { get; set; }
     }
 }

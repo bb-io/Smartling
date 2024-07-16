@@ -8,7 +8,6 @@ using RestSharp;
 using Apps.Smartling.Models.Requests.Context;
 using Blackbird.Applications.Sdk.Utils.Extensions.Files;
 using Apps.Smartling.Models.Dtos.Contexts;
-using System.Net.Mime;
 using Blackbird.Applications.Sdk.Common.Files;
 
 namespace Apps.Smartling.Actions;
@@ -66,8 +65,18 @@ public class ContextActions : SmartlingInvocable
         var downloadProjectContextResponse = await Client.ExecuteAsync(downloadProjectContextRequest);
         using var contextStream = new MemoryStream(downloadProjectContextResponse.RawBytes); 
         
+        var getProjectContextRequest = new SmartlingRequest($"/context-api/v2/projects/{ProjectId}/contexts/{getProjectContext.ContextUid}", Method.Get);
+        var getProjectContextResponse = await Client.ExecuteWithErrorHandling<ResponseWrapper<ProjectContextDto>>(getProjectContextRequest);
+
         var projectContextFileReference =
-           await _fileManagementClient.UploadAsync(contextStream, downloadProjectContextResponse.ContentType, $"context");
+           await _fileManagementClient.UploadAsync(contextStream, downloadProjectContextResponse.ContentType, getProjectContextResponse.Response.Data.Name);
         return projectContextFileReference;
+    }
+
+    [Action("Delete project context", Description = "Delete project context")]
+    public async Task DeleteProjectContext([ActionParameter] GetProjectContextRequest getProjectContext)
+    {
+        var deleteProjectContextRequest = new SmartlingRequest($"/context-api/v2/projects/{ProjectId}/contexts/{getProjectContext.ContextUid}", Method.Delete);
+        await Client.ExecuteWithErrorHandling(deleteProjectContextRequest);
     }
 }
