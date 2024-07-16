@@ -1,5 +1,6 @@
 ﻿using Apps.Smartling.DataSourceHandlers.EnumHandlers;
 using Blackbird.Applications.Sdk.Common;
+using Blackbird.Applications.Sdk.Common.Dictionaries;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 
 namespace Apps.Smartling.Models.Requests.Jobs;
@@ -19,7 +20,7 @@ public class SearchJobsRequest
     public DateTime? DueDateAfter { get; set; }
     
     [Display("Job status")]
-    [DataSource(typeof(JobStatusDataSourceHandler))]
+    [StaticDataSource(typeof(JobStatusDataSourceHandler))]
     public IEnumerable<string>? TranslationJobStatus { get; set; }
     
     public int? Limit { get; set; }

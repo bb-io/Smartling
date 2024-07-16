@@ -1,12 +1,15 @@
-﻿using Blackbird.Applications.Sdk.Utils.Sdk.DataSourceHandlers;
+﻿using Blackbird.Applications.Sdk.Common.Dictionaries;
 
 namespace Apps.Smartling.DataSourceHandlers.EnumHandlers;
 
-public class CallbackMethodDataSourceHandler : EnumDataHandler
+public class CallbackMethodDataSourceHandler : IStaticDataSourceHandler
 {
-    protected override Dictionary<string, string> EnumValues => new()
+    public Dictionary<string, string> GetData()
     {
-        { "GET", "GET" },
-        { "POST", "POST" }
-    };
+        return new()
+        { 
+            { "GET", "GET" },
+            { "POST", "POST" } 
+        };
+    }
 }

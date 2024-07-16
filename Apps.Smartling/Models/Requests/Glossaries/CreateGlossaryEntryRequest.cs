@@ -1,6 +1,7 @@
 ﻿using Apps.Smartling.DataSourceHandlers;
 using Apps.Smartling.DataSourceHandlers.EnumHandlers;
 using Blackbird.Applications.Sdk.Common;
+using Blackbird.Applications.Sdk.Common.Dictionaries;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 
 namespace Apps.Smartling.Models.Requests.Glossaries;
@@ -25,7 +26,7 @@ public class CreateGlossaryEntryRequest
     public bool? DoNotTranslate { get; set; }
     
     [Display("Part of speech")]
-    [DataSource(typeof(PartOfSpeechDataSourceHandler))]
+    [StaticDataSource(typeof(PartOfSpeechDataSourceHandler))]
     public string? PartOfSpeech { get; set; }
     
     [Display("Labels")]

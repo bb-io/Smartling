@@ -1,18 +1,21 @@
-﻿using Blackbird.Applications.Sdk.Utils.Sdk.DataSourceHandlers;
+﻿using Blackbird.Applications.Sdk.Common.Dictionaries;
 
 namespace Apps.Smartling.DataSourceHandlers.EnumHandlers;
 
-public class PlaceholderFormatDataSourceHandler : EnumDataHandler
+public class PlaceholderFormatDataSourceHandler : IStaticDataSourceHandler
 {
-    protected override Dictionary<string, string> EnumValues => new()
+    public Dictionary<string, string> GetData()
     {
-        { "none", "None" },
-        { "c", "C" },
-        { "ios", "iOS" },
-        { "python", "Python" },
-        { "java", "Java" },
-        { "yaml", "YAML" },
-        { "qt", "QT" },
-        { "resx", "RESX" }
-    };
+        return new()
+        {
+            { "none", "None" },
+            { "c", "C" },
+            { "ios", "iOS" },
+            { "python", "Python" },
+            { "java", "Java" },
+            { "yaml", "YAML" },
+            { "qt", "QT" },
+            { "resx", "RESX" }
+        };
+    }
 }

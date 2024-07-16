@@ -1,12 +1,15 @@
-﻿using Blackbird.Applications.Sdk.Utils.Sdk.DataSourceHandlers;
+﻿using Blackbird.Applications.Sdk.Common.Dictionaries;
 
 namespace Apps.Smartling.DataSourceHandlers.EnumHandlers;
 
-public class IssueTypeCodeDataSourceHandler : EnumDataHandler
+public class IssueTypeCodeDataSourceHandler : IStaticDataSourceHandler
 {
-    protected override Dictionary<string, string> EnumValues => new()
+    public Dictionary<string, string> GetData()
     {
-        { "SOURCE", "Source" },
-        { "TRANSLATION", "Translation" }
-    };
+        return new()
+        {
+            { "SOURCE", "Source" },
+            { "TRANSLATION", "Translation" }
+        };
+    }
 }

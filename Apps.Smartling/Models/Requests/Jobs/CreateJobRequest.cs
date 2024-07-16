@@ -1,5 +1,6 @@
 ﻿using Apps.Smartling.DataSourceHandlers.EnumHandlers;
 using Blackbird.Applications.Sdk.Common;
+using Blackbird.Applications.Sdk.Common.Dictionaries;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 
 namespace Apps.Smartling.Models.Requests.Jobs;
@@ -21,6 +22,6 @@ public class CreateJobRequest
     public string? CallbackUrl { get; set; }
     
     [Display("Callback method")]
-    [DataSource(typeof(CallbackMethodDataSourceHandler))]
+    [StaticDataSource(typeof(CallbackMethodDataSourceHandler))]
     public string? CallbackMethod { get; set; }
 }
