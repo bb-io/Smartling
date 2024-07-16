@@ -1,6 +1,7 @@
 ﻿using Apps.Smartling.DataSourceHandlers;
 using Apps.Smartling.DataSourceHandlers.EnumHandlers;
 using Blackbird.Applications.Sdk.Common;
+using Blackbird.Applications.Sdk.Common.Dictionaries;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 
 namespace Apps.Smartling.Models.Requests.Issues;
@@ -28,11 +29,11 @@ public class SearchIssuesRequest
     public IEnumerable<string>? IssueSeverityLevelCodes { get; set; }
     
     [Display("Issue state")]
-    [DataSource(typeof(IssueStateCodeDataSourceHandler))]
+    [StaticDataSource(typeof(IssueStateCodeDataSourceHandler))]
     public string? IssueStateCode { get; set; }
     
     [Display("Issue type")]
-    [DataSource(typeof(IssueTypeCodeDataSourceHandler))]
+    [StaticDataSource(typeof(IssueTypeCodeDataSourceHandler))]
     public string? IssueTypeCode { get; set; }
 
     [Display("Assignee ID")]

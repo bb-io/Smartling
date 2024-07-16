@@ -1,6 +1,7 @@
 ﻿using Apps.Smartling.DataSourceHandlers;
 using Apps.Smartling.DataSourceHandlers.EnumHandlers;
 using Blackbird.Applications.Sdk.Common;
+using Blackbird.Applications.Sdk.Common.Dictionaries;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 
 namespace Apps.Smartling.Models.Requests.Glossaries;
@@ -19,7 +20,7 @@ public class ExportGlossaryRequest
     public IEnumerable<string>? LocaleIds { get; set; }
     
     [Display("Entries state", Description = "If set, the result will include only entries with selected state.")]
-    [DataSource(typeof(EntryStateDataSourceHandler))]
+    [StaticDataSource(typeof(EntryStateDataSourceHandler))]
     public string? EntriesState { get; set; }
     
     [Display("Return fallback translations", Description = "If set to 'True', appropriate fallback locales will " +

@@ -32,7 +32,7 @@ public class ContextActions : SmartlingInvocable
         await using var contextFileStream = await _fileManagementClient.DownloadAsync(addProjectContext.ContextFile);
         uploadProjectContextRequest.AddFile("content", await contextFileStream.GetByteData(), addProjectContext.ContextFile.Name);
         var uploadProjectContextResponse =
-            await Client.ExecuteWithErrorHandling<ResponseWrapper<UploadProjectContextResponse>>(uploadProjectContextRequest);
+            await Client.ExecuteWithErrorHandling<ResponseWrapper<ProjectContextDto>>(uploadProjectContextRequest);
         
         if(addProjectContext.ContextMatching.HasValue && addProjectContext.ContextMatching.Value)
         {
@@ -40,5 +40,19 @@ public class ContextActions : SmartlingInvocable
             runContextMatchingRequest.AddJsonBody(new {});
             await Client.ExecuteAsyncProcessWithHandling(runContextMatchingRequest, ProjectId);
         }
+    }
+
+    [Action("Search project context", Description = "Search project context")]
+    public async Task<List<ProjectContextDto>> SearchProjectContext([ActionParameter] SearchProjectContextRequest searchProjectContext)
+    {
+        var searchProjectContextRequest = new SmartlingRequest($"/context-api/v2/projects/{ProjectId}/contexts", Method.Get);
+        if (!string.IsNullOrEmpty(searchProjectContext.Name))
+            searchProjectContextRequest.AddQueryParameter("nameFilter", searchProjectContext.Name);
+        if (!string.IsNullOrEmpty(searchProjectContext.Type))
+            searchProjectContextRequest.AddQueryParameter("type", searchProjectContext.Type);
+
+        var searchProjectContextResponse =
+            await Client.Paginate<ProjectContextDto>(searchProjectContextRequest);
+        return searchProjectContextResponse;
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Apps.Smartling.DataSourceHandlers;
 using Apps.Smartling.DataSourceHandlers.EnumHandlers;
 using Blackbird.Applications.Sdk.Common;
+using Blackbird.Applications.Sdk.Common.Dictionaries;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 
 namespace Apps.Smartling.Models.Requests.Glossaries;
@@ -14,7 +15,7 @@ public class SearchGlossaryEntriesRequest
     public IEnumerable<string>? LocaleIds { get; set; }
     
     [Display("Entry state")]
-    [DataSource(typeof(EntryStateDataSourceHandler))]
+    [StaticDataSource(typeof(EntryStateDataSourceHandler))]
     public string? EntryState { get; set; }
     
     [Display("Missing translation locale ID")]

@@ -1,6 +1,6 @@
 ﻿namespace Apps.Smartling.Models.Dtos.Contexts
 {
-    public class UploadProjectContextResponse
+    public class ProjectContextDto
     {
         public string ContextType { get; set; }
         public string ContextUid { get; set; }

@@ -1,17 +1,20 @@
-﻿using Blackbird.Applications.Sdk.Utils.Sdk.DataSourceHandlers;
+﻿using Blackbird.Applications.Sdk.Common.Dictionaries;
 
 namespace Apps.Smartling.DataSourceHandlers.EnumHandlers;
 
-public class JobStatusDataSourceHandler : EnumDataHandler
+public class JobStatusDataSourceHandler : IStaticDataSourceHandler
 {
-    protected override Dictionary<string, string> EnumValues => new()
+    public Dictionary<string, string> GetData()
     {
-        { "DRAFT", "Draft" },
-        { "AWAITING_AUTHORIZATION", "Awaiting authorization" },
-        { "IN_PROGRESS", "In progress" },
-        { "COMPLETED", "Completed" },
-        { "CANCELLED", "Cancelled" },
-        { "CLOSED", "Closed" },
-        { "DELETED", "Deleted" }
-    };
+        return new()
+        {
+            { "DRAFT", "Draft" },
+            { "AWAITING_AUTHORIZATION", "Awaiting authorization" },
+            { "IN_PROGRESS", "In progress" },
+            { "COMPLETED", "Completed" },
+            { "CANCELLED", "Cancelled" },
+            { "CLOSED", "Closed" },
+            { "DELETED", "Deleted" }
+        };
+    }
 }

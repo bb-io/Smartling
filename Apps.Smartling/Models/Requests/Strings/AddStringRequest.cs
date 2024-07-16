@@ -1,5 +1,6 @@
 ﻿using Apps.Smartling.DataSourceHandlers.EnumHandlers;
 using Blackbird.Applications.Sdk.Common;
+using Blackbird.Applications.Sdk.Common.Dictionaries;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 
 namespace Apps.Smartling.Models.Requests.Strings;
@@ -18,18 +19,18 @@ public class AddStringRequest
     [Display("Maximum character length")]
     public int? MaxLength { get; set; }
     
-    [DataSource(typeof(StringFormatDataSourceHandler))]
+    [StaticDataSource(typeof(StringFormatDataSourceHandler))]
     public string? Format { get; set; }
     
     [Display("Callback URL")]
     public string? CallbackUrl { get; set; }
     
     [Display("Callback method")]
-    [DataSource(typeof(CallbackMethodDataSourceHandler))]
+    [StaticDataSource(typeof(CallbackMethodDataSourceHandler))]
     public string? CallbackMethod { get; set; }
     
     [Display("Placeholder format")]
-    [DataSource(typeof(PlaceholderFormatDataSourceHandler))]
+    [StaticDataSource(typeof(PlaceholderFormatDataSourceHandler))]
     public string? PlaceholderFormat { get; set; }
     
     [Display("Custom placeholder format (Java Regular Expression)")]

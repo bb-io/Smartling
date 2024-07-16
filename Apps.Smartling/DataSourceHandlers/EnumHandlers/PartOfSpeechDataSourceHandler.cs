@@ -1,19 +1,22 @@
-﻿using Blackbird.Applications.Sdk.Utils.Sdk.DataSourceHandlers;
+﻿using Blackbird.Applications.Sdk.Common.Dictionaries;
 
 namespace Apps.Smartling.DataSourceHandlers.EnumHandlers;
 
-public class PartOfSpeechDataSourceHandler : EnumDataHandler
+public class PartOfSpeechDataSourceHandler : IStaticDataSourceHandler
 {
-    protected override Dictionary<string, string> EnumValues => new()
+    public Dictionary<string, string> GetData()
     {
-        { "NOUN", "Noun" },
-        { "VERB", "Verb" },
-        { "ADJECTIVE", "Adjective" },
-        { "ADVERB", "Adverb" },
-        { "PRONOUN", "Pronoun" },
-        { "PREPOSITION", "Preposition" },
-        { "INTERJECTION", "Interjection" },
-        { "CONJUNCTION", "Conjunction" },
-        { "PROPER_NOUN", "Proper Noun" }
-    };
+        return new()
+        {
+            { "NOUN", "Noun" },
+            { "VERB", "Verb" },
+            { "ADJECTIVE", "Adjective" },
+            { "ADVERB", "Adverb" },
+            { "PRONOUN", "Pronoun" },
+            { "PREPOSITION", "Preposition" },
+            { "INTERJECTION", "Interjection" },
+            { "CONJUNCTION", "Conjunction" },
+            { "PROPER_NOUN", "Proper Noun" }
+        };
+    }
 }

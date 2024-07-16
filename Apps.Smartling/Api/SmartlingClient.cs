@@ -3,7 +3,9 @@ using Apps.Smartling.Models.Dtos;
 using Apps.Smartling.Models.Responses;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Utils.Extensions.Sdk;
+using Blackbird.Applications.Sdk.Utils.Extensions.String;
 using Blackbird.Applications.Sdk.Utils.RestSharp;
+using DocumentFormat.OpenXml.Drawing;
 using Newtonsoft.Json;
 using RestSharp;
 
@@ -60,5 +62,22 @@ public class SmartlingClient : BlackBirdRestClient
                 return asyncProcessResult.Response.Data;
             await Task.Delay(1000);
         }
+    }
+
+    public async Task<List<T>> Paginate<T>(RestRequest request)
+    {
+        var result = new List<T>();
+        ResponseWrapper<ItemsWrapper<T>> response = null;
+        do
+        {
+            if(response != null && response.Response.Data.Offset != null)
+            {
+                request.AddQueryParameter("offset", response.Response.Data.Offset.ToString());
+            }
+            response = await ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<T>>>(request);
+            result.AddRange(response.Response.Data.Items ?? Enumerable.Empty<T>());
+        } while (response.Response?.Data?.Offset != null);
+
+        return result;
     }
 }
