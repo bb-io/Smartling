@@ -50,8 +50,8 @@ public class SmartlingClient : BlackBirdRestClient
 
     public virtual async Task<AsyncProcessResult> ExecuteAsyncProcessWithHandling(RestRequest request, string projectId)
     {
-        var content = await ExecuteWithErrorHandling<AsyncProcessDto>(request);
-        var checkAsyncResultRequest = new SmartlingRequest($"/context-api/v2/projects/{projectId}/processes/{content.ProcessUid}", Method.Get);
+        var content = await ExecuteWithErrorHandling<ResponseWrapper<AsyncProcessDto>>(request);
+        var checkAsyncResultRequest = new SmartlingRequest($"/context-api/v2/projects/{projectId}/processes/{content.Response.Data.ProcessUid}", Method.Get);
 
         while (true)
         {
