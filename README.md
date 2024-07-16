@@ -100,6 +100,13 @@ Before you can connect you need to make sure that:
 - **Get word count report**.
 - **Get word count report in CSV format**.
 
+### Contexts
+
+- **Search project context**.
+- **Add project context** uploads context file to project and optionally runs automatic context matching (When "Run automatic context matching" optional input parameter is "true")
+- **Delete project context**.
+- **Download project context**.
+
 ## Events
 
 - **On job completed** and **On job completed (manual)** are triggered when a job is completed, signifying that all authorized content in a job, for all locales, has reached the _Published_ step of the workflow.
@@ -113,7 +120,6 @@ Before you can connect you need to make sure that:
 - Tags
 - Translation quality checks
 - File Machine Translations
-- Context
 - Custom fields
 
 Let us know if you're interested!
