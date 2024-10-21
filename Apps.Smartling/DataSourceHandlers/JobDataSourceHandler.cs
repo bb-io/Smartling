@@ -8,22 +8,46 @@ using RestSharp;
 
 namespace Apps.Smartling.DataSourceHandlers;
 
-public class JobDataSourceHandler : SmartlingInvocable, IAsyncDataSourceHandler
+public class JobDataSourceHandler(InvocationContext invocationContext)
+    : SmartlingInvocable(invocationContext), IAsyncDataSourceHandler
 {
-    public JobDataSourceHandler(InvocationContext invocationContext) : base(invocationContext)
-    {
-    }
-
     public async Task<Dictionary<string, string>> GetDataAsync(DataSourceContext context,
         CancellationToken cancellationToken)
     {
-        var request = new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs?sortBy=createdDate&sortDirection=DESC", 
-            Method.Get);
-        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<JobDto>>>(request);
-        var jobs = response.Response.Data.Items
-            .Where(job => context.SearchString == null 
-                          || job.JobName.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase))
-            .ToDictionary(job => job.TranslationJobUid, job => job.JobName);
+        var limit = 100;
+        var offset = 0;
+        var jobs = new Dictionary<string, string>();
+
+        var baseUrl = $"/jobs-api/v3/projects/{ProjectId}/jobs?sortBy=createdDate&sortDirection=DESC";
+        if (!string.IsNullOrEmpty(context.SearchString))
+        {
+            baseUrl += $"&jobName={Uri.EscapeDataString(context.SearchString)}";
+        }
+
+        while (true)
+        {
+            var requestUrl = $"{baseUrl}&offset={offset}&limit={limit}";
+            var request = new SmartlingRequest(requestUrl, Method.Get);
+            var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<JobDto>>>(request);
+
+            var items = response.Response.Data.Items.ToList();
+
+            foreach (var job in items)
+            {
+                if (!jobs.ContainsKey(job.TranslationJobUid))
+                {
+                    jobs.Add(job.TranslationJobUid, job.JobName);
+                }
+            }
+
+            if (items.Count < limit)
+            {
+                break;
+            }
+
+            offset += limit;
+        }
+
         return jobs;
     }
 }

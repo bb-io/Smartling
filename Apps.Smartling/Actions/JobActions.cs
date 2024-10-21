@@ -16,12 +16,8 @@ using RestSharp;
 namespace Apps.Smartling.Actions;
 
 [ActionList]
-public class JobActions : SmartlingInvocable
+public class JobActions(InvocationContext invocationContext) : SmartlingInvocable(invocationContext)
 {
-    public JobActions(InvocationContext invocationContext) : base(invocationContext)
-    {
-    }
-
     #region Get
 
     [Action("Get job", Description = "Get the details of a job.")]
