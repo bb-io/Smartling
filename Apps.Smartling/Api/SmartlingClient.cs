@@ -2,6 +2,7 @@
 using Apps.Smartling.Models.Dtos;
 using Apps.Smartling.Models.Responses;
 using Blackbird.Applications.Sdk.Common.Authentication;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Utils.Extensions.Sdk;
 using Blackbird.Applications.Sdk.Utils.Extensions.String;
 using Blackbird.Applications.Sdk.Utils.RestSharp;
@@ -27,7 +28,7 @@ public class SmartlingClient : BlackBirdRestClient
     protected override Exception ConfigureErrorException(RestResponse response)
     {
         var errors = JsonConvert.DeserializeObject<ErrorResponseWrapper>(response.Content);
-        return new($"{errors.Response.Code}: {string.Join("; ", errors.Response.Errors.Select(error => error.Message))}");
+        throw new PluginApplicationException($"{errors.Response.Code}: {string.Join("; ", errors.Response.Errors.Select(error => error.Message))}");
     }
 
     private string GetAccessToken(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders)
@@ -43,7 +44,7 @@ public class SmartlingClient : BlackBirdRestClient
         var response = client.Execute(request);
 
         if (!response.IsSuccessful)
-            throw new("Failed to authorize. Please check the validity of your user identifier and secret.");
+            throw new PluginApplicationException("Failed to authorize. Please check the validity of your user identifier and secret.");
 
         var accessToken = JsonConvert.DeserializeObject<ResponseWrapper<AccessTokenDto>>(response.Content).Response.Data
             .AccessToken;

@@ -9,6 +9,7 @@ using Apps.Smartling.Models.Requests.Context;
 using Blackbird.Applications.Sdk.Utils.Extensions.Files;
 using Apps.Smartling.Models.Dtos.Contexts;
 using Blackbird.Applications.Sdk.Common.Files;
+using Apps.Smartling.Models.Responses.Context;
 
 namespace Apps.Smartling.Actions;
 
@@ -79,4 +80,83 @@ public class ContextActions : SmartlingInvocable
         var deleteProjectContextRequest = new SmartlingRequest($"/context-api/v2/projects/{ProjectId}/contexts/{getProjectContext.ContextUid}", Method.Delete);
         await Client.ExecuteWithErrorHandling(deleteProjectContextRequest);
     }
+
+
+    [Action("Upload new context", Description = "Upload new context (with optional automatic matching)")]
+    public async Task<ResponseWrapper<UploadContextResponseDto>> UploadNewContext(
+        [ActionParameter] AddProjectContextRequest request)
+    {
+        var endpoint = request.ContextMatching == true
+            ? $"/context-api/v2/projects/{ProjectId}/contexts/upload-and-match-async"
+            : $"/context-api/v2/projects/{ProjectId}/contexts";
+
+        var uploadRequest = new SmartlingRequest(endpoint, Method.Post)
+        {
+            AlwaysMultipartFormData = true
+        };
+
+        if (!string.IsNullOrEmpty(request.Name))
+            uploadRequest.AddParameter("name", request.Name);
+
+        await using var contextFileStream = await _fileManagementClient.DownloadAsync(request.ContextFile);
+        uploadRequest.AddFile("content",
+            await contextFileStream.GetByteData(),
+            request.ContextFile.Name);
+
+        if (request.ContextMatching == true)
+        {
+            var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<UploadAndMatchDto>>(uploadRequest);
+
+            return new ResponseWrapper<UploadContextResponseDto>(
+             new ResponseData<UploadContextResponseDto>(
+                 response.Response.Code,
+                 new UploadContextResponseDto
+                 {
+                     ProcessUid = response.Response.Data.ProcessUid
+                 }
+             )
+         );
+        }
+        else
+        {
+            var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ProjectContextDto>>(uploadRequest);
+
+            return new ResponseWrapper<UploadContextResponseDto>(
+            new ResponseData<UploadContextResponseDto>(
+                response.Response.Code,
+                new UploadContextResponseDto
+                {
+                    ContextUid = response.Response.Data.ContextUid
+                }
+            )
+        );
+        }
+    }
+
+    [Action("Link context to string", Description = "Link context to string")]
+    public async Task<ResponseWrapper<LinkContextResponseDto>> LinkContextToString(
+            [ActionParameter] SimpleLinkContextRequest request)
+    {
+        var apiRequest = new SmartlingRequest($"/context-api/v2/projects/{ProjectId}/bindings", Method.Post);
+
+        var body = new
+        {
+            bindings = new[]
+            {
+                    new
+                    {
+                        contextUid = request.ContextUid,
+                        stringHashcode = request.StringHashcode
+                    }
+                }
+        };
+
+        apiRequest.AddJsonBody(body);
+
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<LinkContextResponseDto>>(apiRequest);
+        return response;
+    }
+
+
 }
+

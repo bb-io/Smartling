@@ -1,0 +1,8 @@
+{
+    "ConnectionDefinition": {
+        "projectId": "",
+        "userIdentifier": "",
+        "userSecret": ""
+    },
+    "TestFolder": "TestFiles"
+}
