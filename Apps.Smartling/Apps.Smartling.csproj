@@ -6,18 +6,19 @@
         <Nullable>enable</Nullable>
         <Product>Smartling</Product>
         <Description>Cloud-based translation management platform that helps businesses efficiently translate and localize content, optimizing global communication strategies through automation and centralized management</Description>
-        <Version>1.6.1</Version>
+        <Version>1.6.3</Version>
         <AssemblyName>Apps.Smartling</AssemblyName>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Blackbird.Applications.Sdk.Common" Version="2.10.0" />
+      <PackageReference Include="Blackbird.Applications.Sdk.Common" Version="2.12.0" />
       <PackageReference Include="Blackbird.Applications.SDK.Extensions.FileManagement" Version="1.0.2-alpha2" />
       <PackageReference Include="Blackbird.Applications.Sdk.Glossaries.Utils" Version="1.0.0" />
       <PackageReference Include="Blackbird.Applications.Sdk.Utils" Version="1.0.25" />
       <PackageReference Include="MimeTypes" Version="2.4.1">
         <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        <IncludeAssets>
+		time; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
     </ItemGroup>
 
