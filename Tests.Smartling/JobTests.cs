@@ -28,5 +28,17 @@ namespace Tests.Smartling
            
             Assert.IsNotNull(response);
         }
+
+        [TestMethod]
+        public async Task AddStringJob_IsSuccess()
+        {
+            var action = new StringActions(InvocationContext);
+            var job = new JobIdentifier { TranslationJobUid= "zapjjrjaddrc" };
+            var stringIdentifier = new StringIdentifier { Hashcode = "d2a79dda4a4ssfba3b62729003f7cccf" };
+            var locale = new TargetLocalesIdentifier {  };
+            var response = await action.AddStringToJob(job, stringIdentifier, locale, false);
+
+            Assert.IsNotNull(response);
+        }
     }
 }
