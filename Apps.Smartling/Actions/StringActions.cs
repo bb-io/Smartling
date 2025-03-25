@@ -10,6 +10,7 @@ using Apps.Smartling.Models.Responses;
 using Apps.Smartling.Models.Responses.Strings;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Utils.Extensions.String;
 using RestSharp;
@@ -137,6 +138,19 @@ public class StringActions : SmartlingInvocable
         [ActionParameter] StringIdentifier stringIdentifier, [ActionParameter] TargetLocalesIdentifier targetLocales,
         [Display("Move enabled")] bool? moveEnabled)
     {
+        var getRequest = new SmartlingRequest(
+        $"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}",
+        Method.Get
+    );
+        var getResponse = await Client.ExecuteWithErrorHandling<ResponseWrapper<JobDto>>(getRequest);
+        var job = getResponse.Response.Data;
+
+        if (job?.TargetLocaleIds == null || !job.TargetLocaleIds.Any())
+        {
+            throw new PluginMisconfigurationException(
+                "No target locales found for this job. Please configure target locales in the job first.");
+        }
+
         var request =
             new SmartlingRequest(
                 $"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}/strings/add", Method.Post);
