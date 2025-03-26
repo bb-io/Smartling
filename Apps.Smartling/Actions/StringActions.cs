@@ -142,13 +142,18 @@ public class StringActions : SmartlingInvocable
         $"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}",
         Method.Get
     );
-        var getResponse = await Client.ExecuteWithErrorHandling<ResponseWrapper<JobDto>>(getRequest);
-        var job = getResponse.Response.Data;
-
-        if (job?.TargetLocaleIds == null || !job.TargetLocaleIds.Any())
+        
+        if (targetLocales is null || targetLocales.TargetLocaleIds is null || !targetLocales.TargetLocaleIds.Any()) 
         {
-            throw new PluginMisconfigurationException(
-                "No target locales found for this job. Please configure target locales in the job first.");
+            var getResponse = await Client.ExecuteWithErrorHandling<ResponseWrapper<JobDto>>(getRequest);
+            var job = getResponse.Response.Data;
+
+            if (job?.TargetLocaleIds == null || !job.TargetLocaleIds.Any())
+            {
+                throw new PluginMisconfigurationException(
+                    "No target locales found for this job. " +
+                    "Please configure target locales in the job first or set target locales when adding the string to a job.");
+            }
         }
 
         var request =
