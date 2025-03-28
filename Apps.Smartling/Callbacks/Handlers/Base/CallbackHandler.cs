@@ -58,7 +58,7 @@ public abstract class CallbackHandler : SmartlingInvocable, IWebhookEventHandler
 
 
 
-    private async Task LogToWebhookAsync(string logMessage)
+    public async Task LogToWebhookAsync(string logMessage)
     {
         using (var client = new HttpClient())
         {
