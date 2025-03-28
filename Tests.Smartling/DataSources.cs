@@ -18,5 +18,18 @@ namespace Tests.Smartling
                 Console.WriteLine($"{item.Key} - {item.Value}");
             }
         }
+
+        [TestMethod]
+        public async Task JobDataHandlerReturnsValues()
+        {
+            var dataHandler = new JobDataSourceHandler(InvocationContext);
+
+            var response = await dataHandler.GetDataAsync(new Blackbird.Applications.Sdk.Common.Dynamic.DataSourceContext { SearchString = "" }, CancellationToken.None);
+            foreach (var item in response)
+            {
+                Assert.IsNotNull(item);
+                Console.WriteLine($"{item.Key} - {item.Value}");
+            }
+        }
     }
 }
