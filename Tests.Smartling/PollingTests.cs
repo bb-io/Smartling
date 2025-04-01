@@ -26,7 +26,8 @@ namespace Tests.Smartling
             };
 
             var response = await action.OnJobCompleted(request);
-            Console.WriteLine($"{response.Result.Response.Data}");
+            Console.WriteLine($"Request memory: {request.Memory?.LastInteractionDate}");
+            Console.WriteLine($"Response memory: {response.Memory?.LastInteractionDate}");
             Assert.IsNotNull(response);
         }
     }

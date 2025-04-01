@@ -28,38 +28,58 @@ namespace Apps.Smartling.Polling
                 return new PollingEventResponse<DateMemory, ListJobsResponse>
                 {
                     FlyBird = false,
-                    Memory = request.Memory ?? new DateMemory { LastInteractionDate = DateTime.UtcNow }
+                    Memory = request.Memory ?? new DateMemory
+                    {
+                        LastInteractionDate = DateTime.UtcNow,
+                        KnownJobIds = new List<string>()
+                    }
                 };
             }
 
             if (request.Memory == null)
             {
-                var maxCreatedAt = jobs.Max(j => j.CreatedDate);
-                var memory = new DateMemory { LastInteractionDate = maxCreatedAt };
+                request.Memory = new DateMemory
+                {
+                    LastInteractionDate = DateTime.UtcNow,
+                    KnownJobIds = new List<string>()
+                };
+
+                foreach (var job in jobs)
+                {
+                    if (job.JobStatus == "COMPLETED" || job.JobStatus == "CLOSED")
+                    {
+                        request.Memory.KnownJobIds.Add(job.TranslationJobUid);
+                    }
+                }
+
                 return new PollingEventResponse<DateMemory, ListJobsResponse>
                 {
                     FlyBird = false,
-                    Memory = memory
+                    Memory = request.Memory
                 };
             }
 
-            var completedJobs = jobs.Where(j => j.JobStatus == "COMPLETED" && j.CreatedDate > request.Memory.LastInteractionDate)
-                                    .ToArray();
+              var newCompletedJobs = jobs
+                .Where(j => (j.JobStatus == "COMPLETED" || j.JobStatus == "CLOSED")
+                         && !request.Memory.KnownJobIds.Contains(j.TranslationJobUid))
+                .ToArray();
 
-            if (completedJobs.Any())
+            if (newCompletedJobs.Any())
             {
-                var maxCreatedAt = completedJobs.Max(j => j.CreatedDate);
-                request.Memory.LastInteractionDate = maxCreatedAt;
-
-                var listJobsResponse = new Apps.Smartling.Polling.Models.ListJobsResponse
+                foreach (var job in newCompletedJobs)
                 {
-                    Response = new Apps.Smartling.Polling.Models.ResponseData
+                    request.Memory.KnownJobIds.Add(job.TranslationJobUid);
+                }
+
+                var listJobsResponse = new ListJobsResponse
+                {
+                    Response = new ResponseData
                     {
                         Code = "SUCCESS",
-                        Data = new Apps.Smartling.Polling.Models.DataContent
+                        Data = new DataContent
                         {
-                            Items = completedJobs.ToList(),
-                            TotalCount = completedJobs.Length
+                            Items = newCompletedJobs.ToList(),
+                            TotalCount = newCompletedJobs.Length
                         }
                     }
                 };
