@@ -22,6 +22,7 @@ using Blackbird.Applications.Sdk.Glossaries.Utils.Parsers;
 using Blackbird.Applications.Sdk.Utils.Extensions.Files;
 using Blackbird.Applications.Sdk.Utils.Extensions.Http;
 using RestSharp;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 
 namespace Apps.Smartling.Actions;
 
@@ -389,156 +390,170 @@ public class GlossaryActions : SmartlingInvocable
                                              "existing glossary.")]
     public async Task<GlossaryIdentifier> ImportGlossary([ActionParameter] ImportGlossaryRequest input)
     {
+        string title = "";
+        var rowsToAdd = new List<List<string>>();
+        await using var glossaryStream = await _fileManagementClient.DownloadAsync(input.Glossary);
+        var glossaryUid = input.GlossaryUid;
         var getLocalesRequest = new SmartlingRequest("/locales-api/v2/dictionary/locales", Method.Get);
         var getLocalesResponse =
             await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<LocaleDto>>>(getLocalesRequest);
         var locales = getLocalesResponse.Response.Data.Items.ToArray();
-        
-        string?[] GenerateCsvHeaders(string[] localeCodes)
+
+        if (input.Glossary.Name.EndsWith(".tbx"))
         {
-            var headers = new string?[localeCodes.Length * 5];
-        
-            for (var i = 0; i < localeCodes.Length; i++)
+            string?[] GenerateCsvHeaders(string[] localeCodes)
             {
+                var headers = new string?[localeCodes.Length * 5];
+
+                for (var i = 0; i < localeCodes.Length; i++)
+                {
+                    var locale = locales.FirstOrDefault(locale =>
+                        locale.LocaleId.Equals(localeCodes[i], StringComparison.OrdinalIgnoreCase));
+
+                    var index = i * 5;
+
+                    if (locale == null)
+                    {
+                        headers[index] = headers[index + 1] =
+                            headers[index + 2] = headers[index + 3] = headers[index + 4] = null;
+                        continue;
+                    }
+
+                    headers[index] = $"{Term} {locale.Description} {locale.LocaleId}";
+                    headers[index + 1] = $"{Variations} {locale.Description} {locale.LocaleId}";
+                    headers[index + 2] = $"{Notes} {locale.Description} {locale.LocaleId}";
+                    headers[index + 3] = $"{CaseSensitive} {locale.Description} {locale.LocaleId}";
+                    headers[index + 4] = $"{ExactMatch} {locale.Description} {locale.LocaleId}";
+                }
+
+                return headers;
+            }
+
+            string? GetColumnValue(string columnName, GlossaryConceptEntry entry, string localeCode)
+            {
+                var languageSection = entry.LanguageSections.FirstOrDefault(ls =>
+                    ls.LanguageCode.Equals(localeCode, StringComparison.OrdinalIgnoreCase));
                 var locale = locales.FirstOrDefault(locale =>
-                    locale.LocaleId.Equals(localeCodes[i], StringComparison.OrdinalIgnoreCase));
-                
-                var index = i * 5;
+                    locale.LocaleId.Equals(localeCode, StringComparison.OrdinalIgnoreCase));
 
                 if (locale == null)
+                    return null;
+
+                if (languageSection != null)
                 {
-                    headers[index] = headers[index + 1] =
-                        headers[index + 2] = headers[index + 3] = headers[index + 4] = null;
-                    continue;
+                    switch (columnName)
+                    {
+                        case var name when name == $"{Term} {locale.Description} {locale.LocaleId}":
+                            return languageSection.Terms.First().Term;
+
+                        case var name when name == $"{Variations} {locale.Description} {locale.LocaleId}":
+                            return string.Join(',', languageSection.Terms.Skip(1).Select(term => term.Term));
+
+                        case var name when name == $"{Notes} {locale.Description} {locale.LocaleId}":
+                            return string.Join(';', languageSection.Terms.First().Notes ?? Enumerable.Empty<string>());
+
+                        case var name when name == $"{CaseSensitive} {locale.Description} {locale.LocaleId}":
+                            var caseSensitivity = languageSection.Terms.First().CaseSensitivity;
+                            return caseSensitivity != null
+                                ? caseSensitivity == CaseSensitivity.CaseSensitive ? "TRUE" : string.Empty
+                                : string.Empty;
+
+                        case var name when name == $"{ExactMatch} {locale.Description} {locale.LocaleId}":
+                            var exactMatch = languageSection.Terms.First().ExactMatch;
+                            return exactMatch != null
+                                ? exactMatch == true ? "TRUE" : string.Empty
+                                : string.Empty;
+
+                        default:
+                            return null;
+                    }
                 }
 
-                headers[index] = $"{Term} {locale.Description} {locale.LocaleId}";
-                headers[index + 1] = $"{Variations} {locale.Description} {locale.LocaleId}";
-                headers[index + 2] = $"{Notes} {locale.Description} {locale.LocaleId}";
-                headers[index + 3] = $"{CaseSensitive} {locale.Description} {locale.LocaleId}";
-                headers[index + 4] = $"{ExactMatch} {locale.Description} {locale.LocaleId}";
-            }
+                if (columnName == $"{Term} {locale.Description} {locale.LocaleId}"
+                    || columnName == $"{Variations} {locale.Description} {locale.LocaleId}"
+                    || columnName == $"{Notes} {locale.Description} {locale.LocaleId}"
+                    || columnName == $"{CaseSensitive} {locale.Description} {locale.LocaleId}"
+                    || columnName == $"{ExactMatch} {locale.Description} {locale.LocaleId}")
+                    return string.Empty;
 
-            return headers;
-        }
-        
-        string? GetColumnValue(string columnName, GlossaryConceptEntry entry, string localeCode)
-        {
-            var languageSection = entry.LanguageSections.FirstOrDefault(ls =>
-                ls.LanguageCode.Equals(localeCode, StringComparison.OrdinalIgnoreCase));
-            var locale = locales.FirstOrDefault(locale =>
-                locale.LocaleId.Equals(localeCode, StringComparison.OrdinalIgnoreCase));
-
-            if (locale == null)
                 return null;
-        
-            if (languageSection != null)
-            {
-                switch (columnName)
-                {
-                    case var name when name == $"{Term} {locale.Description} {locale.LocaleId}":
-                        return languageSection.Terms.First().Term;
-                    
-                    case var name when name == $"{Variations} {locale.Description} {locale.LocaleId}":
-                        return string.Join(',', languageSection.Terms.Skip(1).Select(term => term.Term));
-                    
-                    case var name when name == $"{Notes} {locale.Description} {locale.LocaleId}":
-                        return string.Join(';', languageSection.Terms.First().Notes ?? Enumerable.Empty<string>());
-                    
-                    case var name when name == $"{CaseSensitive} {locale.Description} {locale.LocaleId}":
-                        var caseSensitivity = languageSection.Terms.First().CaseSensitivity;
-                        return caseSensitivity != null
-                            ? caseSensitivity == CaseSensitivity.CaseSensitive ? "TRUE" : string.Empty
-                            : string.Empty;
-                    
-                    case var name when name == $"{ExactMatch} {locale.Description} {locale.LocaleId}":
-                        var exactMatch = languageSection.Terms.First().ExactMatch;
-                        return exactMatch != null
-                            ? exactMatch == true ? "TRUE" : string.Empty
-                            : string.Empty;
-                    
-                    default:
-                        return null;
-                }
             }
-            
-            if (columnName == $"{Term} {locale.Description} {locale.LocaleId}" 
-                || columnName == $"{Variations} {locale.Description} {locale.LocaleId}" 
-                || columnName == $"{Notes} {locale.Description} {locale.LocaleId}" 
-                || columnName == $"{CaseSensitive} {locale.Description} {locale.LocaleId}"
-                || columnName == $"{ExactMatch} {locale.Description} {locale.LocaleId}")
-                return string.Empty;
-        
-            return null;
-        }
 
-        static string SplitCamelCase(string input)
-            => Regex.Replace(input, "([a-z])([A-Z])", "$1 $2");
+            static string SplitCamelCase(string input)
+                => Regex.Replace(input, "([a-z])([A-Z])", "$1 $2");
 
-        await using var glossaryStream = await _fileManagementClient.DownloadAsync(input.Glossary);
-        var blackbirdGlossary = await glossaryStream.ConvertFromTbx();
-        
-        var localesPresent = blackbirdGlossary.ConceptEntries
-            .SelectMany(entry => entry.LanguageSections)
-            .Select(section => section.LanguageCode)
-            .Distinct()
-            .ToArray();
-        
-        var glossaryUid = input.GlossaryUid;
-        
-        if (glossaryUid == null)
-        {
-            var createGlossaryRequest =
-                new SmartlingRequest($"/glossary-api/v3/accounts/{_accountUid}/glossaries", Method.Post);
-            createGlossaryRequest.AddJsonBody(new
+            var blackbirdGlossary = await glossaryStream.ConvertFromTbx();
+
+            var localesPresent = blackbirdGlossary.ConceptEntries
+                .SelectMany(entry => entry.LanguageSections)
+                .Select(section => section.LanguageCode)
+                .Distinct()
+                .ToArray();
+
+            if (glossaryUid == null)
             {
-                glossaryName = blackbirdGlossary.Title,
-                description = blackbirdGlossary.SourceDescription,
-                localeIds = localesPresent.Select(locale =>
+                var createGlossaryRequest =
+                    new SmartlingRequest($"/glossary-api/v3/accounts/{_accountUid}/glossaries", Method.Post);
+                createGlossaryRequest.AddJsonBody(new
                 {
-                    var parts = locale.Split('-');
-                    if (parts.Length == 2)
-                        parts[1] = parts[1].ToUpper();
-                    return string.Join("-", parts);
-                })
-            });
+                    glossaryName = blackbirdGlossary.Title,
+                    description = blackbirdGlossary.SourceDescription,
+                    localeIds = localesPresent.Select(locale =>
+                    {
+                        var parts = locale.Split('-');
+                        if (parts.Length == 2)
+                            parts[1] = parts[1].ToUpper();
+                        return string.Join("-", parts);
+                    })
+                });
 
-            var createGlossaryResponse =
-                await Client.ExecuteWithErrorHandling<ResponseWrapper<GlossaryDto>>(createGlossaryRequest);
-            glossaryUid = createGlossaryResponse.Response.Data.GlossaryUid;
-        }
+                var createGlossaryResponse =
+                    await Client.ExecuteWithErrorHandling<ResponseWrapper<GlossaryDto>>(createGlossaryRequest);
+                glossaryUid = createGlossaryResponse.Response.Data.GlossaryUid;
+            }
 
-        var localeRelatedColumns =
-            (string[])GenerateCsvHeaders(localesPresent).Where(header => header != null).ToArray();
-        
-        var rowsToAdd = new List<List<string>>();
-        rowsToAdd.Add(new List<string>(new[] { Definition, PartOfSpeech }.Concat(localeRelatedColumns)));
-        
-        foreach (var entry in blackbirdGlossary.ConceptEntries)
-        {
-            var languageRelatedValues = (IEnumerable<string>)localesPresent
-                .SelectMany(localeCode =>
-                    localeRelatedColumns
-                        .Select(column => GetColumnValue(column, entry, localeCode)))
-                .Where(value => value != null);
-            
-            rowsToAdd.Add(new List<string>(new[]
+            var localeRelatedColumns =
+                (string[])GenerateCsvHeaders(localesPresent).Where(header => header != null).ToArray();
+
+            rowsToAdd.Add(new List<string>(new[] { Definition, PartOfSpeech }.Concat(localeRelatedColumns)));
+
+            foreach (var entry in blackbirdGlossary.ConceptEntries)
             {
+                var languageRelatedValues = (IEnumerable<string>)localesPresent
+                    .SelectMany(localeCode =>
+                        localeRelatedColumns
+                            .Select(column => GetColumnValue(column, entry, localeCode)))
+                    .Where(value => value != null);
+
+                rowsToAdd.Add(new List<string>(new[]
+                {
                 entry.Definition ?? string.Empty,
                 SplitCamelCase(entry.LanguageSections.First().Terms.First().PartOfSpeech?.ToString() ?? string.Empty)
             }.Concat(languageRelatedValues)));
+            }
+
+            title = blackbirdGlossary.Title + ".csv";
+        }
+        else 
+        {
+            if (!input.Glossary.Name.EndsWith(".csv"))
+            {
+                throw new PluginMisconfigurationException("Glossary format not supported (either tbx or csv input expected)");
+            }
         }
 
-        await using var csvStream =
-            await rowsToAdd.ConvertToCsv(new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), ',');
+        title = String.IsNullOrEmpty(title) ? input.Glossary.Name : title;
+
+        await using var csvStream = rowsToAdd is null || rowsToAdd.Count == 0 ? glossaryStream
+           : await rowsToAdd.ConvertToCsv(new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), ',');
         
         var csvBytes = await csvStream.GetByteData();
 
         var initializeGlossaryImportRequest =
             new SmartlingRequest($"/glossary-api/v3/accounts/{_accountUid}/glossaries/{glossaryUid}/import",
                 Method.Post);
-        initializeGlossaryImportRequest.AddFile("importFile", csvBytes, $"{blackbirdGlossary.Title}.csv");
-        initializeGlossaryImportRequest.AddParameter("importFileName", $"{blackbirdGlossary.Title}.csv");
+        initializeGlossaryImportRequest.AddFile("importFile", csvBytes, title);
+        initializeGlossaryImportRequest.AddParameter("importFileName", title);
         initializeGlossaryImportRequest.AddParameter("importFileMediaType", "text/csv");
         initializeGlossaryImportRequest.AddParameter("archiveMode", input.ArchiveExistingEntries ?? false);
 

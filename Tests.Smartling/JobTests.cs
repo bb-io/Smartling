@@ -17,15 +17,15 @@ namespace Tests.Smartling
         public async Task CreateJob_IsSuccess()
         {
             var action = new JobActions(InvocationContext);
-            var job = new CreateJobRequest { JobName="TestA" };
-            var locale = new TargetLocalesIdentifier { TargetLocaleIds = ["fr-CA" ]};
+            var job = new CreateJobRequest { JobName="TestЕуіе", CallbackUrl= "https://webhook.site/#!/view/46153d60-6c08-4081-9ab3-7ba5d527fec8/53e0cd33-1ad0-41dc-8000-3edd768d994b/1" };
+            var locale = new TargetLocalesIdentifier { /*TargetLocaleIds = ["fr-CA" ]*/};
             var response = action.CreateJob(job, locale);
 
             foreach (var jobInfo in response.Result.TargetLocaleIds)
             {
                 Console.WriteLine($"{jobInfo}");
             }
-           
+            Console.WriteLine($"{response.Result.ReferenceNumber}");
             Assert.IsNotNull(response);
         }
 

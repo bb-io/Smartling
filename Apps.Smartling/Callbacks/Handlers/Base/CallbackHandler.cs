@@ -4,6 +4,8 @@ using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Common.Webhooks;
 using Blackbird.Applications.Sdk.Utils.Webhooks.Bridge;
 using Blackbird.Applications.Sdk.Utils.Webhooks.Bridge.Models.Request;
+using System.Text;
+using System.Text.Json;
 
 namespace Apps.Smartling.Callbacks.Handlers.Base;
 
@@ -19,6 +21,8 @@ public abstract class CallbackHandler : SmartlingInvocable, IWebhookEventHandler
         Dictionary<string, string> values)
     {
         var (input, bridgeCredentials) = GetBridgeServiceInputs(values);
+        await LogToWebhookAsync($"Subscribe:{JsonSerializer.Serialize(input)}");
+
         await BridgeService.Subscribe(input, bridgeCredentials);
     }
 
@@ -26,6 +30,10 @@ public abstract class CallbackHandler : SmartlingInvocable, IWebhookEventHandler
         Dictionary<string, string> values)
     {
         var (input, bridgeCredentials) = GetBridgeServiceInputs(values);
+        await LogToWebhookAsync($"Unsubscribe:  {JsonSerializer.Serialize(input)}");
+
+
+
         await BridgeService.Unsubscribe(input, bridgeCredentials);
     }
     
@@ -46,5 +54,27 @@ public abstract class CallbackHandler : SmartlingInvocable, IWebhookEventHandler
         };
 
         return (webhookData, bridgeCredentials);
+    }
+
+
+
+    public async Task LogToWebhookAsync(string logMessage)
+    {
+        using (var client = new HttpClient())
+        {
+            var payload = new
+            {
+                message = logMessage,
+                timestamp = DateTime.UtcNow
+            };
+            var json = JsonSerializer.Serialize(payload);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var response = await client.PostAsync("https://webhook.site/46153d60-6c08-4081-9ab3-7ba5d527fec8", content);
+
+
+            if (!response.IsSuccessStatusCode)
+            {
+            }
+        }
     }
 }
