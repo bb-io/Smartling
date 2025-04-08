@@ -188,7 +188,77 @@ public class FileActions : SmartlingInvocable
         await Client.ExecuteWithErrorHandling(addFileToJobRequest);
         return new SourceFileIdentifier { FileUri = fileUri };
     }
-    
+
+    [Action("Upload file to project", Description = "Uploads original source content to project.")]
+    public async Task<SourceFileIdentifier> UploadFile([ActionParameter] FileWrapper file)
+    {
+        var fileUri = file.File.Name;
+        var fileType = GetFileType(file.File.Name);
+        var getTargetFileDataRequest =
+            new SmartlingRequest($"/files-api/v2/projects/{ProjectId}/target-file-types", Method.Post);
+        getTargetFileDataRequest.AddJsonBody(new
+        {
+            sourceFiles = new[]
+            {
+                new
+                {
+                    sourceFileUri = fileUri,
+                    sourceFileType = fileType
+                }
+            }
+        });
+        var getTargetFileDataResponse =
+            await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<TargetFileDtoWrapper>>>(getTargetFileDataRequest);
+
+        var uploadFileRequest = new SmartlingRequest($"/files-api/v2/projects/{ProjectId}/file", Method.Post);
+
+        var fileBytes = _fileManagementClient.DownloadAsync(file.File).Result.GetByteData().Result;
+        uploadFileRequest.AddFile("file", fileBytes, file.File.Name);
+        uploadFileRequest.AddParameter("fileUri", fileUri);
+        uploadFileRequest.AddParameter("fileType", fileType);
+        await Client.ExecuteWithErrorHandling(uploadFileRequest);
+
+        fileUri = getTargetFileDataResponse.Response.Data.Items.First().TargetFiles.First().TargetFileUri;
+
+        RestResponse getFileStatusResponse;
+
+        do
+        {
+            var getFileStatusRequest =
+                new SmartlingRequest($"/files-api/v2/projects/{ProjectId}/file/status?fileUri={fileUri}", Method.Get);
+            getFileStatusResponse = await Client.ExecuteAsync(getFileStatusRequest);
+        } while (getFileStatusResponse.StatusCode != HttpStatusCode.OK);
+
+        return new SourceFileIdentifier { FileUri = fileUri };
+    }
+
+    [Action("Link uploaded file to job", Description = "")]
+    public async Task LinkFileToJob([ActionParameter] JobIdentifier jobIdentifier, [ActionParameter] SourceFileIdentifier input,
+        [ActionParameter] TargetLocalesIdentifier targetLocales) 
+    {
+        var locales = targetLocales.TargetLocaleIds;
+
+        if (locales == null)
+        {
+            var getJobRequest = new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}",
+                Method.Get);
+            var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<JobDto>>(getJobRequest);
+            locales = response.Response.Data.TargetLocaleIds;
+        }
+
+        var addFileToJobRequest =
+            new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}/file/add",
+                Method.Post);
+
+        addFileToJobRequest.AddJsonBody(new
+        {
+            input.FileUri,
+            targetLocaleIds = locales
+        });
+
+        await Client.ExecuteWithErrorHandling(addFileToJobRequest);
+    }
+
     [Action("Import translation", Description = "Import a translated file.")]
     public async Task<ImportTranslationResponse> ImportTranslation([ActionParameter] FileWrapper file, 
         [ActionParameter] TargetLocaleIdentifier targetLocale, [ActionParameter] SourceFileIdentifier fileIdentifier,

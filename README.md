@@ -44,6 +44,8 @@ Before you can connect you need to make sure that:
 ### Job files
 
 - **Upload source file to job** adds all non-published strings from a file to a job. The file will be added for all locales of the job if _Target locales_ parameter is not specified.
+- **Upload file to project** Uploads original source content to project.
+- **Link uploaded file to job** adds all non-published strings from a file that has already been uplaoded to the project to the specified job. The file will be added for all locales of the job if _Target locales_ parameter is not specified.
 - **List source files within job** lists all source files within a job.
 - **Download source file**.
 - **Download translated file** downloads translated file for a single locale.
