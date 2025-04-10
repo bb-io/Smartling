@@ -151,7 +151,8 @@ public class GlossaryActions : SmartlingInvocable
     {
         var glossary = await GetGlossaryAsync(glossaryIdentifier);
         var locales = input.LocaleIds ?? glossary.LocaleIds;
-        
+
+        var title = input.Title ?? glossary.GlossaryName;
         object? modifiedFilter;
         var after = input.GlossaryEntriesModifiedAfter;
         var before = input.GlossaryEntriesModifiedBefore;
@@ -222,6 +223,14 @@ public class GlossaryActions : SmartlingInvocable
         var response = await Client.ExecuteWithErrorHandling(request);
 
         await using var csvMemoryStream = new MemoryStream(response.RawBytes);
+
+        if (input.fileFormat == "CSV") 
+        {
+            var csvglossaryFileReference =
+            await _fileManagementClient.UploadAsync(csvMemoryStream, MediaTypeNames.Text.Xml, $"{title}.csv");
+            return new(csvglossaryFileReference);
+        }
+        
         var parsedCsv = await csvMemoryStream.ParseCsvFile();
         
         var glossaryConceptEntries = new List<GlossaryConceptEntry>();
@@ -367,8 +376,7 @@ public class GlossaryActions : SmartlingInvocable
             };
             glossaryConceptEntries.Add(entry);
         }
-
-        var title = input.Title ?? glossary.GlossaryName;
+                
         var description = !string.IsNullOrWhiteSpace(input.SourceDescription ?? glossary.Description)
             ? input.SourceDescription ?? glossary.Description
             : $"Glossary export from Smartling on {DateTime.Now.ToLocalTime().ToString("F")}";
@@ -380,8 +388,8 @@ public class GlossaryActions : SmartlingInvocable
         };
 
         await using var glossaryStream = exportedGlossary.ConvertToTbx();
-        
-        var glossaryFileReference = 
+
+        var glossaryFileReference =
             await _fileManagementClient.UploadAsync(glossaryStream, MediaTypeNames.Text.Xml, $"{title}.tbx");
         return new(glossaryFileReference);
     }

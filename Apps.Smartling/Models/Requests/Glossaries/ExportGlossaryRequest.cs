@@ -38,4 +38,8 @@ public class ExportGlossaryRequest
     [Display("Entries modified after", Description = "If set, the result will include only entries created after " +
                                                   "specified date.")]
     public DateTime? GlossaryEntriesModifiedAfter { get; set; }
+
+    [Display("Export file format")]
+    [StaticDataSource(typeof(GlossaryFileFormatSourceHandler))]
+    public string? fileFormat { get; set; } 
 }
