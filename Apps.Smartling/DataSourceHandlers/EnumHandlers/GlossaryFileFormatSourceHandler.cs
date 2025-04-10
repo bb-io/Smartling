@@ -9,7 +9,7 @@ namespace Apps.Smartling.DataSourceHandlers.EnumHandlers;
     {
         return new List<DataSourceItem>
         {
-            new("TBX", "TBX - recommended, interoperable with other apps"),
+            new("TBX", "TBX - interoperable with other apps"),
             new("CSV", "CSV - raw export"),
         };
 
