@@ -227,7 +227,7 @@ public class GlossaryActions : SmartlingInvocable
         if (input.fileFormat == "CSV") 
         {
             var csvglossaryFileReference =
-            await _fileManagementClient.UploadAsync(csvMemoryStream, MediaTypeNames.Text.Xml, $"{title}.csv");
+            await _fileManagementClient.UploadAsync(csvMemoryStream, MediaTypeNames.Text.Csv, $"{title}.csv");
             return new(csvglossaryFileReference);
         }
         
