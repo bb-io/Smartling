@@ -25,7 +25,7 @@ namespace Tests.Smartling
                 Memory = new DateMemory { LastInteractionDate = customDate }
             };
 
-            var response = await action.OnJobCompleted(request);
+            var response = await action.OnJobsCompleted(request);
             Console.WriteLine($"Request memory: {request.Memory?.LastInteractionDate}");
             Console.WriteLine($"Response memory: {response.Memory?.LastInteractionDate}");
             Assert.IsNotNull(response);

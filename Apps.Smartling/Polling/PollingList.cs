@@ -1,7 +1,13 @@
 ﻿using Apps.Smartling.Api;
+using Apps.Smartling.Models.Dtos.Jobs;
+using Apps.Smartling.Models.Identifiers;
+using Apps.Smartling.Models.Responses;
+using Apps.Smartling.Models.Responses.Jobs;
 using Apps.Smartling.Polling.Models;
+using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Common.Polling;
+using Blackbird.Applications.Sdk.Common.Webhooks;
 using RestSharp;
 
 namespace Apps.Smartling.Polling
@@ -14,8 +20,8 @@ namespace Apps.Smartling.Polling
 
         }
 
-        [PollingEvent("On job completed [Polling]")]
-        public async Task<PollingEventResponse<DateMemory, ListJobsResponse>> OnJobCompleted(PollingEventRequest<DateMemory> request)
+        [PollingEvent("On jobs completed [Polling]")]
+        public async Task<PollingEventResponse<DateMemory, SearchJobsPollingResponse>> OnJobsCompleted(PollingEventRequest<DateMemory> request)
         {
             var endpoint = $"/jobs-api/v2/projects/{ProjectId}/jobs";
 
@@ -25,7 +31,7 @@ namespace Apps.Smartling.Polling
 
             if (jobs.Length == 0)
             {
-                return new PollingEventResponse<DateMemory, ListJobsResponse>
+                return new PollingEventResponse<DateMemory, SearchJobsPollingResponse>
                 {
                     FlyBird = false,
                     Memory = request.Memory ?? new DateMemory
@@ -52,7 +58,7 @@ namespace Apps.Smartling.Polling
                     }
                 }
 
-                return new PollingEventResponse<DateMemory, ListJobsResponse>
+                return new PollingEventResponse<DateMemory, SearchJobsPollingResponse>
                 {
                     FlyBird = false,
                     Memory = request.Memory
@@ -71,20 +77,12 @@ namespace Apps.Smartling.Polling
                     request.Memory.KnownJobIds.Add(job.TranslationJobUid);
                 }
 
-                var listJobsResponse = new ListJobsResponse
+                var listJobsResponse = new SearchJobsPollingResponse
                 {
-                    Response = new ResponseData
-                    {
-                        Code = "SUCCESS",
-                        Data = new DataContent
-                        {
-                            Items = newCompletedJobs.ToList(),
-                            TotalCount = newCompletedJobs.Length
-                        }
-                    }
+                    Jobs = newCompletedJobs
                 };
 
-                return new PollingEventResponse<DateMemory, ListJobsResponse>
+                return new PollingEventResponse<DateMemory, SearchJobsPollingResponse>
                 {
                     FlyBird = true,
                     Memory = request.Memory,
@@ -93,10 +91,52 @@ namespace Apps.Smartling.Polling
             }
             else
             {
-                return new PollingEventResponse<DateMemory, ListJobsResponse>
+                return new PollingEventResponse<DateMemory, SearchJobsPollingResponse>
                 {
                     FlyBird = false,
                     Memory = request.Memory
+                };
+            }
+        }
+
+        [PollingEvent("On specific job completed [Polling]")]
+        public async Task<PollingEventResponse<jobStatusMemory, JobDto>> OnJobCompleted(PollingEventRequest<jobStatusMemory> request, [PollingEventParameter] JobIdentifier jobIdentifier)
+        {
+            var jobRequest = new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}",
+            Method.Get);
+            var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<JobDto>>(jobRequest);
+            var job = response.Response.Data;
+
+            var newMemory = new jobStatusMemory
+            {
+                LastInteractionDate = DateTime.UtcNow,
+                LastJobStatus = job.JobStatus
+            };
+
+            if (request.Memory == null)
+            {
+                return new PollingEventResponse<jobStatusMemory, JobDto>
+                {
+                    FlyBird = job.JobStatus == "COMPLETED",
+                    Memory = newMemory,
+                    Result = job
+                };
+            }
+
+            if (job.JobStatus == "COMPLETED" && job.JobStatus != request.Memory.LastJobStatus)
+            {
+                return new PollingEventResponse<jobStatusMemory, JobDto>
+                {
+                    FlyBird = true,
+                    Memory = newMemory,
+                    Result = job
+                };
+            } else
+            {
+                return new PollingEventResponse<jobStatusMemory, JobDto>
+                {
+                    FlyBird = false,
+                    Memory = newMemory,
                 };
             }
         }
