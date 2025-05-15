@@ -80,7 +80,7 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
         if (input.DueDateAfter != null)
             jobs = jobs.Where(job => job.DueDate >= input.DueDateAfter);
 
-        return new(jobs);
+        return new SearchJobsResponse { Jobs = jobs};
     }
 
     #endregion
