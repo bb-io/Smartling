@@ -130,7 +130,7 @@ public class FileActions : SmartlingInvocable
         [ActionParameter] fileTypeRequest FileType)
     {
         var fileUri = file.File.Name;
-        var fileType = String.IsNullOrEmpty(FileType.Type) ? GetFileType(file.File.Name) : FileType.Type;
+        var fileType = FileType != null && !String.IsNullOrEmpty(FileType?.Type) ? FileType.Type : GetFileType(file.File.Name);
         var getTargetFileDataRequest =
             new SmartlingRequest($"/files-api/v2/projects/{ProjectId}/target-file-types", Method.Post);
         getTargetFileDataRequest.AddJsonBody(new
@@ -195,7 +195,7 @@ public class FileActions : SmartlingInvocable
         [ActionParameter] fileTypeRequest FileType)
     {
         var fileUri = file.File.Name;
-        var fileType = String.IsNullOrEmpty(FileType.Type) ? GetFileType(file.File.Name) : FileType.Type;
+        var fileType = FileType != null && !String.IsNullOrEmpty(FileType?.Type) ? FileType.Type : GetFileType(file.File.Name);
         var getTargetFileDataRequest =
             new SmartlingRequest($"/files-api/v2/projects/{ProjectId}/target-file-types", Method.Post);
         getTargetFileDataRequest.AddJsonBody(new
