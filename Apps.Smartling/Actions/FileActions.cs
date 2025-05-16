@@ -126,10 +126,10 @@ public class FileActions : SmartlingInvocable
     [Action("Upload source file to job", Description = "Add all non-published strings from a file to a job.")]
     public async Task<SourceFileIdentifier> AddFileToJob([ActionParameter] JobIdentifier jobIdentifier, 
         [ActionParameter] FileWrapper file, [ActionParameter] TargetLocalesIdentifier targetLocales,
-        [ActionParameter] fileTypeRequest FileType)
+        [ActionParameter] fileUploadRequest FileInput)
     {
         var fileUri = file.File.Name;
-        var fileType = FileType != null && !String.IsNullOrEmpty(FileType?.Type) ? FileType.Type : GetFileType(file.File.Name);
+        var fileType = FileInput != null && !String.IsNullOrEmpty(FileInput?.Type) ? FileInput.Type : GetFileType(file.File.Name);
         var getTargetFileDataRequest =
             new SmartlingRequest($"/files-api/v2/projects/{ProjectId}/target-file-types", Method.Post);
         getTargetFileDataRequest.AddJsonBody(new
@@ -152,6 +152,16 @@ public class FileActions : SmartlingInvocable
         uploadFileRequest.AddFile("file", fileBytes, file.File.Name);
         uploadFileRequest.AddParameter("fileUri", fileUri);
         uploadFileRequest.AddParameter("fileType", fileType);
+        if (FileInput != null && FileInput.Directives != null && FileInput.Directives.Any()
+            && FileInput.DirectiveValues != null && FileInput.DirectiveValues.Any())
+        {
+            var directivePairs = FileInput.Directives.Zip(FileInput.DirectiveValues, (key, value) => new { key, value });
+            foreach (var pair in directivePairs)
+            {
+                uploadFileRequest.AddParameter(pair.key, pair.value);
+            }
+
+        }
         await Client.ExecuteWithErrorHandling(uploadFileRequest);
 
         fileUri = getTargetFileDataResponse.Response.Data.Items.First().TargetFiles.First().TargetFileUri;
@@ -191,10 +201,10 @@ public class FileActions : SmartlingInvocable
 
     [Action("Upload file to project", Description = "Uploads original source content to project.")]
     public async Task<SourceFileIdentifier> UploadFile([ActionParameter] FileWrapper file,
-        [ActionParameter] fileTypeRequest FileType)
+        [ActionParameter] fileUploadRequest FileInput)
     {
         var fileUri = file.File.Name;
-        var fileType = FileType != null && !String.IsNullOrEmpty(FileType?.Type) ? FileType.Type : GetFileType(file.File.Name);
+        var fileType = FileInput != null && !String.IsNullOrEmpty(FileInput?.Type) ? FileInput.Type : GetFileType(file.File.Name);
         var getTargetFileDataRequest =
             new SmartlingRequest($"/files-api/v2/projects/{ProjectId}/target-file-types", Method.Post);
         getTargetFileDataRequest.AddJsonBody(new
@@ -217,6 +227,16 @@ public class FileActions : SmartlingInvocable
         uploadFileRequest.AddFile("file", fileBytes, file.File.Name);
         uploadFileRequest.AddParameter("fileUri", fileUri);
         uploadFileRequest.AddParameter("fileType", fileType);
+        if (FileInput != null && FileInput.Directives != null && FileInput.Directives.Any()
+           && FileInput.DirectiveValues != null && FileInput.DirectiveValues.Any())
+        {
+            var directivePairs = FileInput.Directives.Zip(FileInput.DirectiveValues, (key, value) => new { key, value });
+            foreach (var pair in directivePairs)
+            {
+                uploadFileRequest.AddParameter(pair.key, pair.value);
+            }
+
+        }
         await Client.ExecuteWithErrorHandling(uploadFileRequest);
 
         fileUri = getTargetFileDataResponse.Response.Data.Items.First().TargetFiles.First().TargetFileUri;
