@@ -126,10 +126,11 @@ public class FileActions : SmartlingInvocable
 
     [Action("Upload source file to job", Description = "Add all non-published strings from a file to a job.")]
     public async Task<SourceFileIdentifier> AddFileToJob([ActionParameter] JobIdentifier jobIdentifier, 
-        [ActionParameter] FileWrapper file, [ActionParameter] TargetLocalesIdentifier targetLocales)
+        [ActionParameter] FileWrapper file, [ActionParameter] TargetLocalesIdentifier targetLocales,
+        [ActionParameter] fileTypeRequest FileType)
     {
         var fileUri = file.File.Name;
-        var fileType = GetFileType(file.File.Name);
+        var fileType = FileType != null && !String.IsNullOrEmpty(FileType?.Type) ? FileType.Type : GetFileType(file.File.Name);
         var getTargetFileDataRequest =
             new SmartlingRequest($"/files-api/v2/projects/{ProjectId}/target-file-types", Method.Post);
         getTargetFileDataRequest.AddJsonBody(new
@@ -190,10 +191,11 @@ public class FileActions : SmartlingInvocable
     }
 
     [Action("Upload file to project", Description = "Uploads original source content to project.")]
-    public async Task<SourceFileIdentifier> UploadFile([ActionParameter] FileWrapper file)
+    public async Task<SourceFileIdentifier> UploadFile([ActionParameter] FileWrapper file,
+        [ActionParameter] fileTypeRequest FileType)
     {
         var fileUri = file.File.Name;
-        var fileType = GetFileType(file.File.Name);
+        var fileType = FileType != null && !String.IsNullOrEmpty(FileType?.Type) ? FileType.Type : GetFileType(file.File.Name);
         var getTargetFileDataRequest =
             new SmartlingRequest($"/files-api/v2/projects/{ProjectId}/target-file-types", Method.Post);
         getTargetFileDataRequest.AddJsonBody(new
