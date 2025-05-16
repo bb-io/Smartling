@@ -14,7 +14,6 @@ using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Files;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Utils.Extensions.Files;
-using Blackbird.Applications.Sdk.Utils.Models;
 using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
 using RestSharp;
 
