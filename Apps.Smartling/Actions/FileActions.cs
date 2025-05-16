@@ -191,10 +191,11 @@ public class FileActions : SmartlingInvocable
     }
 
     [Action("Upload file to project", Description = "Uploads original source content to project.")]
-    public async Task<SourceFileIdentifier> UploadFile([ActionParameter] FileWrapper file)
+    public async Task<SourceFileIdentifier> UploadFile([ActionParameter] FileWrapper file,
+        [ActionParameter] fileTypeRequest FileType)
     {
         var fileUri = file.File.Name;
-        var fileType = GetFileType(file.File.Name);
+        var fileType = String.IsNullOrEmpty(FileType.Type) ? GetFileType(file.File.Name) : FileType.Type;
         var getTargetFileDataRequest =
             new SmartlingRequest($"/files-api/v2/projects/{ProjectId}/target-file-types", Method.Post);
         getTargetFileDataRequest.AddJsonBody(new
