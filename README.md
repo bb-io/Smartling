@@ -40,6 +40,7 @@ Before you can connect you need to make sure that:
 - **Update job** updates the attributes of the job, such as job name, description, due date, and reference number. Specify only attributes that need to be updated. Job can be edited only in _Draft (DRAFT)_, _Awaiting Authorization (AWAITING_AUTHORIZATION)_, _In Progress (IN_PROGRESS)_, _Completed (COMPLETED)_ statuses. Leave the _Callback URL_ and _Callback method_ parameters unspecified if you intend to use **On job completed** and/or **On job cancelled** events.
 - **Delete job** deletes a job. Only job that is in _Cancelled (CANCELLED)_ status can be deleted.
 - **Get job word count** retrieves the word count for a job. The word count is calculated based on the content in the job.
+- **Modify translation job schedule** modifies translation job schedule
 
 ### Job files
 

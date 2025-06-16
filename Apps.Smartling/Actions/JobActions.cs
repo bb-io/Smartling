@@ -110,6 +110,34 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
         return job;
     }
 
+    [Action("Modify translation job schedule", Description = "Modifies translation job schedule")]
+    public async Task<ResponseData> ModifySchedule([ActionParameter] JobIdentifier jobIdentifier,
+        [ActionParameter] ModifyScheduleRequest input)
+    {
+        var request =
+            new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}/schedule",
+                Method.Post);
+
+        var body = new
+        {
+            schedules = new[]
+            {
+                new
+                {
+                    workflowStepUid = input.WorkflowUid,
+                    dueDate = input.DueDate.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+                    targetLocaleId = input.TargetLocaleId
+                }
+            }
+        };
+
+        request.AddJsonBody(body);
+
+        var response = await Client.ExecuteWithErrorHandling<ModifyTranslationJobDto>(request);
+
+        return response.Response.Data;
+    }
+
     [Action("Add locale to job", Description = "Add a locale to a job.")]
     public async Task<JobIdentifier> AddLocaleToJob([ActionParameter] JobIdentifier jobIdentifier, 
         [ActionParameter] TargetLocaleIdentifier targetLocale, 

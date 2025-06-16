@@ -1,5 +1,6 @@
 ﻿using Apps.Smartling.Actions;
 using Apps.Smartling.Models.Identifiers;
+using Apps.Smartling.Models.Requests;
 using Apps.Smartling.Models.Requests.Jobs;
 using SmartlingTests.Base;
 using System;
@@ -37,6 +38,36 @@ namespace Tests.Smartling
             var stringIdentifier = new StringIdentifier { Hashcode = "d2a79dda4a4ssfba3b62729003f7cccf" };
             var locale = new TargetLocalesIdentifier {  };
             var response = await action.AddStringToJob(job, stringIdentifier, locale, false);
+
+            Assert.IsNotNull(response);
+        }
+
+        [TestMethod]
+        public async Task GetJob_IsSuccess()
+        {
+            var action = new JobActions(InvocationContext);
+            var job = new JobIdentifier { TranslationJobUid = "" };
+            var response = await action.GetJob(job);
+
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
+            Console.WriteLine(json);
+
+            Assert.IsNotNull(response);
+        }
+
+        [TestMethod]
+        public async Task ModifySchedule_IsSuccess()
+        {
+            var action = new JobActions(InvocationContext);
+            var job = new JobIdentifier { TranslationJobUid = "" };
+            var schedule = new ModifyScheduleRequest
+            {
+                DueDate = DateTime.UtcNow.AddDays(1),
+            };
+            var response = await action.ModifySchedule(job, schedule);
+
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
+            Console.WriteLine(json);
 
             Assert.IsNotNull(response);
         }
