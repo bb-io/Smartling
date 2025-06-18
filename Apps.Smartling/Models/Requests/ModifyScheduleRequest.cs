@@ -16,9 +16,5 @@ namespace Apps.Smartling.Models.Requests
         [JsonProperty("dueDate")]
         public DateTime DueDate { get; set; }
 
-        [Display("Target locale ID")]
-        [DataSource(typeof(TargetLocaleDataSourceHandler))]
-        [JsonProperty("targetLocaleId")]
-        public string TargetLocaleId { get; set; }
     }
 }

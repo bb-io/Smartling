@@ -112,7 +112,7 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
 
     [Action("Modify translation job schedule", Description = "Modifies translation job schedule")]
     public async Task<ResponseData> ModifySchedule([ActionParameter] JobIdentifier jobIdentifier,
-        [ActionParameter] ModifyScheduleRequest input)
+        [ActionParameter] ModifyScheduleRequest input, [ActionParameter] TargetLocaleIdentifier targetLocale)
     {
         var request =
             new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}/schedule",
@@ -126,7 +126,7 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
                 {
                     workflowStepUid = input.WorkflowUid,
                     dueDate = input.DueDate.ToString("yyyy-MM-ddTHH:mm:ssZ"),
-                    targetLocaleId = input.TargetLocaleId
+                    targetLocaleId = targetLocale.TargetLocaleId
                 }
             }
         };
