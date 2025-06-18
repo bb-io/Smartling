@@ -7,7 +7,7 @@ namespace Apps.Smartling.Models.Requests
 {
     public class ModifyScheduleRequest
     {
-        [DataSource(typeof(WorkflowDataSourceHandler))]
+        [DataSource(typeof(WorkflowSingleLanguageHandler))]
         [Display("Workflow step UID")]
         [JsonProperty("workflowStepUid")]
         public string WorkflowUid { get; set; }
@@ -16,9 +16,5 @@ namespace Apps.Smartling.Models.Requests
         [JsonProperty("dueDate")]
         public DateTime DueDate { get; set; }
 
-        [Display("Target locale ID")]
-        [DataSource(typeof(TargetLocaleDataSourceHandler))]
-        [JsonProperty("targetLocaleId")]
-        public string TargetLocaleId { get; set; }
     }
 }
