@@ -46,13 +46,21 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
     }
     
     [Action("List job schedule items", Description = "List all schedule items for a specific job..")]
-    public async Task<ListScheduleItemsResponse> ListJobScheduleItems([ActionParameter] JobIdentifier jobIdentifier)
+    public async Task<ListScheduleItemsResponse> ListJobScheduleItems([ActionParameter] JobIdentifier jobIdentifier,
+        [ActionParameter] TargetLocaleOptionalIdentifier targetLocale)
     {
         var endpoint = $"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}/schedule";
         var request = new SmartlingRequest(endpoint, Method.Get);
        
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<ScheduleItemDto>>>(request);
-        return new(response.Response.Data.Items);
+        var scheduleItems = response.Response.Data.Items;
+        if (targetLocale != null && targetLocale.TargetLocaleId != null)
+        {
+            if (scheduleItems.Any(x => x.TargetLocaleId == targetLocale.TargetLocaleId))
+            { return new(scheduleItems.Where(x => x.TargetLocaleId == targetLocale.TargetLocaleId)); }
+            return new ListScheduleItemsResponse(new List<ScheduleItemDto>()); 
+        }
+        return new(scheduleItems);
     }
 
     [Action("Search jobs", Description = "List jobs that match the specified filter options. If no parameters are " +
