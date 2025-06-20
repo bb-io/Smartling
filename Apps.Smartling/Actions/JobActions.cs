@@ -12,6 +12,7 @@ using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Utils.Extensions.String;
 using RestSharp;
+using DisplayAttribute = Blackbird.Applications.Sdk.Common.DisplayAttribute;
 
 namespace Apps.Smartling.Actions;
 
@@ -51,14 +52,14 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
     {
         var endpoint = $"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}/schedule";
         var request = new SmartlingRequest(endpoint, Method.Get);
-       
+
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<ScheduleItemDto>>>(request);
         var scheduleItems = response.Response.Data.Items;
         if (targetLocale != null && targetLocale.TargetLocaleId != null)
         {
             if (scheduleItems.Any(x => x.TargetLocaleId == targetLocale.TargetLocaleId))
             { return new(scheduleItems.Where(x => x.TargetLocaleId == targetLocale.TargetLocaleId)); }
-            return new ListScheduleItemsResponse(new List<ScheduleItemDto>()); 
+            return new ListScheduleItemsResponse(new List<ScheduleItemDto>());
         }
         return new(scheduleItems);
     }
