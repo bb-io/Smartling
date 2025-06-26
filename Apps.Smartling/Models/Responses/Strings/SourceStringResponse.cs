@@ -6,6 +6,11 @@ namespace Apps.Smartling.Models.Responses.Strings;
 
 public class SourceStringResponse
 {
+    public string Hashcode { get; set; }
+
+    [Display("Parsed string text")]
+    public string ParsedStringText { get; set; }
+
     [Display("String instructions")]
     public IEnumerable<string> StringInstructions { get; set; }
 
@@ -20,6 +25,8 @@ public class SourceStringResponse
 
     public SourceStringResponse(SourceStringDto dto)
     {
+        Hashcode = dto.Hashcode;
+        ParsedStringText = dto.ParsedStringText;
         StringInstructions = dto.StringInstructions;
         StringVariant = dto.StringVariant;
         MaxLength = dto.MaxLength;
