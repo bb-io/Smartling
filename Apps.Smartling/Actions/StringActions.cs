@@ -50,7 +50,7 @@ public class StringActions : SmartlingInvocable
     }
 
     [Action("Get source string by hashcode", Description = "Retrieve a single source string with a specified hashcode.")]
-    public async Task<SourceStringDto> GetSourceStringByHashcode([ActionParameter] StringIdentifier stringIdentifier)
+    public async Task<SourceStringResponse> GetSourceStringByHashcode([ActionParameter] StringIdentifier stringIdentifier)
     {
         var request =
             new SmartlingRequest(
@@ -58,7 +58,8 @@ public class StringActions : SmartlingInvocable
                 Method.Get);
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<SourceStringDto>>>(request);
         var sourceString = response.Response.Data.Items.FirstOrDefault();
-        return sourceString;
+        return sourceString != null ? new SourceStringResponse(sourceString) : new SourceStringResponse();
+
     }
 
     [Action("List translations for strings in file", Description = "List translated strings for a specified file.")]
