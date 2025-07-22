@@ -20,6 +20,86 @@ namespace Apps.Smartling.Polling
 
         }
 
+        [PollingEvent("On job authorized [Polling]")]
+        public async Task<PollingEventResponse<DateMemory, SearchJobsPollingResponse>> OnJobAuthorized(PollingEventRequest<DateMemory> request)
+        {
+            var endpoint = $"/jobs-api/v2/projects/{ProjectId}/jobs";
+
+            var jobs = (await Client.Paginate<Apps.Smartling.Polling.Models.JobItem>(
+                new SmartlingRequest(endpoint, Method.Get)
+            )).ToArray();
+
+            if (jobs.Length == 0)
+            {
+                return new PollingEventResponse<DateMemory, SearchJobsPollingResponse>
+                {
+                    FlyBird = false,
+                    Memory = request.Memory ?? new DateMemory
+                    {
+                        LastInteractionDate = DateTime.UtcNow,
+                        KnownJobIds = new List<string>()
+                    }
+                };
+            }
+
+            if (request.Memory == null)
+            {
+                request.Memory = new DateMemory
+                {
+                    LastInteractionDate = DateTime.UtcNow,
+                    KnownJobIds = new List<string>()
+                };
+
+                foreach (var job in jobs)
+                {
+                    if (job.JobStatus == "IN_PROGRESS")
+                    {
+                        request.Memory.KnownJobIds.Add(job.TranslationJobUid);
+                    }
+                }
+
+                return new PollingEventResponse<DateMemory, SearchJobsPollingResponse>
+                {
+                    FlyBird = false,
+                    Memory = request.Memory
+                };
+            }
+
+            var newInProgressJobs = jobs
+                .Where(j => j.JobStatus == "IN_PROGRESS"
+                         && !request.Memory.KnownJobIds.Contains(j.TranslationJobUid))
+                .ToArray();
+
+            if (newInProgressJobs.Any())
+            {
+                foreach (var job in newInProgressJobs)
+                {
+                    request.Memory.KnownJobIds.Add(job.TranslationJobUid);
+                }
+
+                var listJobsResponse = new SearchJobsPollingResponse
+                {
+                    Jobs = newInProgressJobs
+                };
+
+                return new PollingEventResponse<DateMemory, SearchJobsPollingResponse>
+                {
+                    FlyBird = true,
+                    Memory = request.Memory,
+                    Result = listJobsResponse
+                };
+            }
+            else
+            {
+                return new PollingEventResponse<DateMemory, SearchJobsPollingResponse>
+                {
+                    FlyBird = false,
+                    Memory = request.Memory
+                };
+            }
+        }
+
+
         [PollingEvent("On jobs completed [Polling]")]
         public async Task<PollingEventResponse<DateMemory, SearchJobsPollingResponse>> OnJobsCompleted(PollingEventRequest<DateMemory> request)
         {
