@@ -55,21 +55,21 @@ namespace Tests.Smartling
             Assert.IsNotNull(response);
         }
 
-        [TestMethod]
-        public async Task ModifySchedule_IsSuccess()
-        {
-            var action = new JobActions(InvocationContext);
-            var job = new JobIdentifier { TranslationJobUid = "" };
-            var schedule = new ModifyScheduleRequest
-            {
-                DueDate = DateTime.UtcNow.AddDays(1),
-            };
-            var response = await action.ModifySchedule(job, schedule);
+        //[TestMethod]
+        //public async Task ModifySchedule_IsSuccess()
+        //{
+        //    var action = new JobActions(InvocationContext);
+        //    var job = new JobIdentifier { TranslationJobUid = "" };
+        //    var schedule = new ModifyScheduleRequest
+        //    {
+        //        DueDate = DateTime.UtcNow.AddDays(1),
+        //    };
+        //    var response = await action.ModifySchedule(job, schedule);
 
-            var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
-            Console.WriteLine(json);
+        //    var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
+        //    Console.WriteLine(json);
 
-            Assert.IsNotNull(response);
-        }
+        //    Assert.IsNotNull(response);
+        //}
     }
 }

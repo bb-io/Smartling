@@ -30,5 +30,22 @@ namespace Tests.Smartling
             Console.WriteLine($"Response memory: {response.Memory?.LastInteractionDate}");
             Assert.IsNotNull(response);
         }
+
+        [TestMethod]
+        public async Task OnJobAuthorized()
+        {
+            var customDate = DateTime.UtcNow.AddDays(-1);
+
+            var action = new PollingList(InvocationContext);
+            var request = new PollingEventRequest<DateMemory>
+            {
+                Memory = new DateMemory { LastInteractionDate = customDate }
+            };
+
+            var response = await action.OnJobsCompleted(request);
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
+            Console.WriteLine(json);
+            Assert.IsNotNull(response);
+        }
     }
 }
