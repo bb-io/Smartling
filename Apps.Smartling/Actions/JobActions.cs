@@ -45,7 +45,27 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
         var wordCountResponse = WordCountResponse.CreateFromDtos(response.Response.Data.Items);
         return wordCountResponse;
     }
-    
+
+    [Action("Get job progress", Description = "Get the progress of a job.")]
+    public async Task<JobProgressResponse> GetJobProgress(
+    [ActionParameter] JobIdentifier jobIdentifier,
+    [ActionParameter] TargetLocaleOptionalIdentifier targetLocaleRequest)
+    {
+        var queryParams = string.Empty;
+        if (!string.IsNullOrEmpty(targetLocaleRequest?.TargetLocaleId))
+        {
+            queryParams = $"?targetLocaleId={targetLocaleRequest.TargetLocaleId}";
+        }
+
+        var request = new SmartlingRequest(
+            $"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}/progress{queryParams}",
+            Method.Get);
+
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<JobProgressDto>>(request);
+
+        return JobProgressResponse.CreateFromDto(response.Response.Data);
+    }
+
     [Action("List job schedule items", Description = "List all schedule items for a specific job..")]
     public async Task<ListScheduleItemsResponse> ListJobScheduleItems([ActionParameter] JobIdentifier jobIdentifier,
         [ActionParameter] TargetLocaleOptionalIdentifier targetLocale)
