@@ -588,7 +588,7 @@ public class GlossaryActions : SmartlingInvocable
         }
 
         if (importStatus == "FAILED")
-            throw new Exception("Glossary import failed.");
+            throw new PluginApplicationException("Glossary import failed.");
 
         return new GlossaryIdentifier { GlossaryUid = glossaryUid };
     }

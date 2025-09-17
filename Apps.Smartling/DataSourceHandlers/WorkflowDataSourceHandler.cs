@@ -6,6 +6,7 @@ using Apps.Smartling.Models.Identifiers;
 using Apps.Smartling.Models.Responses;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Dynamic;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using RestSharp;
 
@@ -25,7 +26,7 @@ public class WorkflowDataSourceHandler : SmartlingInvocable, IAsyncDataSourceHan
         CancellationToken cancellationToken)
     {
         if (_targetLocales.TargetLocaleIds == null || !_targetLocales.TargetLocaleIds.Any())
-            throw new Exception("Please enter target locales first.");
+            throw new PluginMisconfigurationException("Please enter target locales first.");
         
         var getProjectRequest = new SmartlingRequest($"/projects-api/v2/projects/{ProjectId}", Method.Get);
         var getProjectResponse = await Client.ExecuteWithErrorHandling<ResponseWrapper<ProjectDto>>(getProjectRequest);

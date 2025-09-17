@@ -5,6 +5,7 @@ using Apps.Smartling.Models.Identifiers;
 using Apps.Smartling.Models.Responses;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Dynamic;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using RestSharp;
 
@@ -24,7 +25,7 @@ public class GlossaryEntryDataSourceHandler : SmartlingInvocable, IAsyncDataSour
         CancellationToken cancellationToken)
     {
         if (_glossaryIdentifier.GlossaryUid == null)
-            throw new Exception("Please enter glossary first.");
+            throw new PluginMisconfigurationException("Please enter glossary first.");
 
         var accountUid = await GetAccountUid();
         var getGlossaryRequest =

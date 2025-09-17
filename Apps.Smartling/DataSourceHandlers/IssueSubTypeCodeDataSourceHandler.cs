@@ -5,6 +5,7 @@ using Apps.Smartling.Models.Requests.Issues;
 using Apps.Smartling.Models.Responses;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Dynamic;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using RestSharp;
 
@@ -24,7 +25,7 @@ public class IssueSubTypeCodeDataSourceHandler : SmartlingInvocable, IAsyncDataS
         CancellationToken cancellationToken)
     {
         if (_createIssueRequest.IssueTypeCode == null)
-            throw new Exception("Please enter issue type first.");
+            throw new PluginMisconfigurationException("Please enter issue type first.");
         
         var accountUid = await GetAccountUid();
         var request = new SmartlingRequest($"/issues-api/v2/accounts/{accountUid}/issue-types", Method.Get);
