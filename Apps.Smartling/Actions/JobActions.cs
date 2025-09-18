@@ -9,6 +9,7 @@ using Apps.Smartling.Models.Responses;
 using Apps.Smartling.Models.Responses.Jobs;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Utils.Extensions.String;
 using RestSharp;
@@ -191,7 +192,7 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
     {
         if ((targetLocales.TargetLocaleIds != null && workflowIdentifier.WorkflowUid == null)
             || (targetLocales.TargetLocaleIds == null && workflowIdentifier.WorkflowUid != null))
-            throw new Exception("Please specify both target locales and workflow or leave both unspecified.");
+            throw new PluginMisconfigurationException("Please specify both target locales and workflow or leave both unspecified.");
 
         for (var i = 0; i < 6; i++)
         {

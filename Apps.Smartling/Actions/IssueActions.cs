@@ -7,6 +7,7 @@ using Apps.Smartling.Models.Responses;
 using Apps.Smartling.Models.Responses.Issues;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using RestSharp;
 
@@ -73,7 +74,7 @@ public class IssueActions : SmartlingInvocable
         [ActionParameter] AssigneeIdentifier assigneeIdentifier)
     {
         if (input.IssueTypeCode == "TRANSLATION" && targetLocale.TargetLocaleId == null)
-            throw new Exception("Target locale is required for translation issue.");
+            throw new PluginMisconfigurationException("Target locale is required for translation issue.");
         
         var request = new SmartlingRequest($"/issues-api/v2/projects/{ProjectId}/issues", Method.Post);
         request.AddJsonBody(new
@@ -107,10 +108,10 @@ public class IssueActions : SmartlingInvocable
         if (input.IssueTypeCode != null)
         {
             if (input.IssueSubTypeCode == null)
-                throw new Exception("When updating the issue type, the issue subtype should be specified.");
+                throw new PluginMisconfigurationException("When updating the issue type, the issue subtype should be specified.");
             
             if (input.IssueTypeCode == "TRANSLATION" && targetLocale.TargetLocaleId == null)
-                throw new Exception("Target locale is required for translation issue.");
+                throw new PluginMisconfigurationException("Target locale is required for translation issue.");
 
             var request =
                 new SmartlingRequest(

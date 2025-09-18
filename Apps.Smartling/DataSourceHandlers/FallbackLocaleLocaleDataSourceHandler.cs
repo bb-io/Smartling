@@ -5,6 +5,7 @@ using Apps.Smartling.Models.Requests.Glossaries;
 using Apps.Smartling.Models.Responses;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Dynamic;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using RestSharp;
 
@@ -25,7 +26,7 @@ public class FallbackLocaleLocaleDataSourceHandler : SmartlingInvocable, IAsyncD
         CancellationToken cancellationToken)
     {
         if (_addFallbackLocaleToGlossaryRequest.FallbackLocaleId == null)
-            throw new Exception("Please enter fallback locale first.");
+            throw new PluginMisconfigurationException("Please enter fallback locale first.");
         
         var accountUid = await GetAccountUid();
         var getProjectsRequest =

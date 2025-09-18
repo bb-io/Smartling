@@ -115,6 +115,7 @@ Before you can connect you need to make sure that:
 - **On job completed** and **On job completed (manual)** are triggered when a job is completed, signifying that all authorized content in a job, for all locales, has reached the _Published_ step of the workflow.
 - **On job cancelled** and **On job cancelled (manual)** are triggered when a job is cancelled.
 - **On string translation published** and **On string translation published (manual)** are triggered when a string translation is published for a locale.
+- **On job authorized** is triggered when a job is authorized.
 
 ## Missing features
 
