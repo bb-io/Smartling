@@ -26,7 +26,7 @@ using Blackbird.Applications.Sdk.Common.Exceptions;
 
 namespace Apps.Smartling.Actions;
 
-[ActionList]
+[ActionList("Glossaries")]
 public class GlossaryActions : SmartlingInvocable
 {
     private readonly string _accountUid;

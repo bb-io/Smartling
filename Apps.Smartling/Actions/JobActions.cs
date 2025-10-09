@@ -17,7 +17,7 @@ using DisplayAttribute = Blackbird.Applications.Sdk.Common.DisplayAttribute;
 
 namespace Apps.Smartling.Actions;
 
-[ActionList]
+[ActionList("Jobs")]
 public class JobActions(InvocationContext invocationContext) : SmartlingInvocable(invocationContext)
 {
     #region Get

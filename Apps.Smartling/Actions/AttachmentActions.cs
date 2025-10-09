@@ -14,7 +14,7 @@ using RestSharp;
 
 namespace Apps.Smartling.Actions;
 
-[ActionList]
+[ActionList("Attachments")]
 public class AttachmentActions : SmartlingInvocable
 {
     private readonly string _accountUid;
