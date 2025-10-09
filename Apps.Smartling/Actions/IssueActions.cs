@@ -13,13 +13,9 @@ using RestSharp;
 
 namespace Apps.Smartling.Actions;
 
-[ActionList]
-public class IssueActions : SmartlingInvocable
+[ActionList("Issues")]
+public class IssueActions(InvocationContext invocationContext) : SmartlingInvocable(invocationContext)
 {
-    public IssueActions(InvocationContext invocationContext) : base(invocationContext)
-    {
-    }
-
     #region Get
 
     [Action("Get issue", Description = "Retrieve detailed information about a single issue.")]

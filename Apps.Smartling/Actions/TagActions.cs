@@ -5,31 +5,21 @@ using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using RestSharp;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Apps.Smartling.Actions
+namespace Apps.Smartling.Actions;
+
+[ActionList("Tags")]
+public class TagActions(InvocationContext invocationContext) : SmartlingInvocable(invocationContext)
 {
-    [ActionList]
-    public class TagActions : SmartlingInvocable
+    [Action("Add tags to strings by hashcode", Description = "Add any amount of tags to any strings.")]
+    public async Task AddTagsToStrings([ActionParameter] StringHashcodesIdentifier strings, [ActionParameter] AddTagsRequest input)
     {
-        public TagActions(InvocationContext invocationContext) : base(invocationContext)
+        var request = new SmartlingRequest($"/tags-api/v2/projects/{ProjectId}/strings/tags/add", Method.Post);
+        request.AddJsonBody(new
         {
-        }
-
-        [Action("Add tags to strings by hashcode", Description = "Add any amount of tags to any strings.")]
-        public async Task AddTagsToStrings([ActionParameter] StringHashcodesIdentifier strings, [ActionParameter] AddTagsRequest input)
-        {
-            var request = new SmartlingRequest($"/tags-api/v2/projects/{ProjectId}/strings/tags/add", Method.Post);
-            request.AddJsonBody(new
-            {
-                tags = input.Tags,
-                stringHashCodes = strings.Hashcodes,
-            });
-            await Client.ExecuteWithErrorHandling(request);
-        }
+            tags = input.Tags,
+            stringHashCodes = strings.Hashcodes,
+        });
+        await Client.ExecuteWithErrorHandling(request);
     }
 }

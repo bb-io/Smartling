@@ -13,16 +13,10 @@ using Apps.Smartling.Models.Responses.Context;
 
 namespace Apps.Smartling.Actions;
 
-[ActionList]
-public class ContextActions : SmartlingInvocable
+[ActionList("Context")]
+public class ContextActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient)
+    : SmartlingInvocable(invocationContext)
 {
-    private readonly IFileManagementClient _fileManagementClient;
-
-    public ContextActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient) : base(invocationContext)
-    {
-        _fileManagementClient = fileManagementClient;
-    }
-
     [Action("Add project context", Description = "Add project context")]
     public async Task AddProjectContext([ActionParameter] AddProjectContextRequest addProjectContext)
     {
@@ -31,7 +25,7 @@ public class ContextActions : SmartlingInvocable
         if(!string.IsNullOrEmpty(addProjectContext.Name))
             uploadProjectContextRequest.AddParameter("name", addProjectContext.Name);
 
-        await using var contextFileStream = await _fileManagementClient.DownloadAsync(addProjectContext.ContextFile);
+        await using var contextFileStream = await fileManagementClient.DownloadAsync(addProjectContext.ContextFile);
         uploadProjectContextRequest.AddFile("content", await contextFileStream.GetByteData(), addProjectContext.ContextFile.Name);
         var uploadProjectContextResponse =
             await Client.ExecuteWithErrorHandling<ResponseWrapper<ProjectContextDto>>(uploadProjectContextRequest);
@@ -70,7 +64,7 @@ public class ContextActions : SmartlingInvocable
         var getProjectContextResponse = await Client.ExecuteWithErrorHandling<ResponseWrapper<ProjectContextDto>>(getProjectContextRequest);
 
         var projectContextFileReference =
-           await _fileManagementClient.UploadAsync(contextStream, downloadProjectContextResponse.ContentType, getProjectContextResponse.Response.Data.Name);
+           await fileManagementClient.UploadAsync(contextStream, downloadProjectContextResponse.ContentType, getProjectContextResponse.Response.Data.Name);
         return projectContextFileReference;
     }
 
@@ -98,7 +92,7 @@ public class ContextActions : SmartlingInvocable
         if (!string.IsNullOrEmpty(request.Name))
             uploadRequest.AddParameter("name", request.Name);
 
-        await using var contextFileStream = await _fileManagementClient.DownloadAsync(request.ContextFile);
+        await using var contextFileStream = await fileManagementClient.DownloadAsync(request.ContextFile);
         uploadRequest.AddFile("content",
             await contextFileStream.GetByteData(),
             request.ContextFile.Name);

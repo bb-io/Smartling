@@ -17,13 +17,9 @@ using RestSharp;
 
 namespace Apps.Smartling.Actions;
 
-[ActionList]
-public class StringActions : SmartlingInvocable
+[ActionList("Strings")]
+public class StringActions(InvocationContext invocationContext) : SmartlingInvocable(invocationContext)
 {
-    public StringActions(InvocationContext invocationContext) : base(invocationContext)
-    {
-    }
-
     #region Get
 
     [Action("List all source strings for file", Description = "List all source strings for a specified source file.")]

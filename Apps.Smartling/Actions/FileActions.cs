@@ -19,16 +19,10 @@ using RestSharp;
 
 namespace Apps.Smartling.Actions;
 
-[ActionList]
-public class FileActions : SmartlingInvocable
+[ActionList("Files")]
+public class FileActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient)
+    : SmartlingInvocable(invocationContext)
 {
-    private readonly IFileManagementClient _fileManagementClient;
-
-    public FileActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient) : base(invocationContext)
-    {
-        _fileManagementClient = fileManagementClient;
-    }
-
     #region Get
 
     [Action("List source files within job", Description = "List all source files within a job.")]
@@ -64,7 +58,7 @@ public class FileActions : SmartlingInvocable
     {
         var endpoint = $"/files-api/v2/projects/{ProjectId}/locales/all/file/zip?fileUri={fileIdentifier.FileUri}";
         var zip = await DownloadFile(endpoint);
-        var files = await (await _fileManagementClient.DownloadAsync(zip)).GetFilesFromZip();
+        var files = await (await fileManagementClient.DownloadAsync(zip)).GetFilesFromZip();
         var resultFiles = new List<FileWrapper>();
 
         foreach (var file in files)
@@ -77,7 +71,7 @@ public class FileActions : SmartlingInvocable
             if (!MimeTypes.TryGetMimeType(resultFilename, out var contentType))
                 contentType = MediaTypeNames.Application.Octet;
 
-            var fileReference = await _fileManagementClient.UploadAsync(file.FileStream, contentType, resultFilename);
+            var fileReference = await fileManagementClient.UploadAsync(file.FileStream, contentType, resultFilename);
             resultFiles.Add(new() { File = fileReference });
             
             file.Dispose();
@@ -110,7 +104,7 @@ public class FileActions : SmartlingInvocable
         var contentType = response.ContentType.Split(';')[0];
 
         using var stream = new MemoryStream(response.RawBytes);
-        var file = await _fileManagementClient.UploadAsync(stream, contentType, filename);
+        var file = await fileManagementClient.UploadAsync(stream, contentType, filename);
         return file;
     }
     
@@ -148,7 +142,7 @@ public class FileActions : SmartlingInvocable
         
         var uploadFileRequest = new SmartlingRequest($"/files-api/v2/projects/{ProjectId}/file", Method.Post);
 
-        var fileBytes = _fileManagementClient.DownloadAsync(file.File).Result.GetByteData().Result;
+        var fileBytes = fileManagementClient.DownloadAsync(file.File).Result.GetByteData().Result;
         uploadFileRequest.AddFile("file", fileBytes, file.File.Name);
         uploadFileRequest.AddParameter("fileUri", fileUri);
         uploadFileRequest.AddParameter("fileType", fileType);
@@ -223,7 +217,7 @@ public class FileActions : SmartlingInvocable
 
         var uploadFileRequest = new SmartlingRequest($"/files-api/v2/projects/{ProjectId}/file", Method.Post);
 
-        var fileBytes = _fileManagementClient.DownloadAsync(file.File).Result.GetByteData().Result;
+        var fileBytes = fileManagementClient.DownloadAsync(file.File).Result.GetByteData().Result;
         uploadFileRequest.AddFile("file", fileBytes, file.File.Name);
         uploadFileRequest.AddParameter("fileUri", fileUri);
         uploadFileRequest.AddParameter("fileType", fileType);
@@ -289,7 +283,7 @@ public class FileActions : SmartlingInvocable
         var request = new SmartlingRequest($"/files-api/v2/projects/{ProjectId}/locales/{targetLocale.TargetLocaleId}/file/import", 
             Method.Post);
 
-        var fileBytes = _fileManagementClient.DownloadAsync(file.File).Result.GetByteData().Result;
+        var fileBytes = fileManagementClient.DownloadAsync(file.File).Result.GetByteData().Result;
         request.AddFile("file", fileBytes, file.File.Name);
         request.AddParameter("fileUri", fileIdentifier.FileUri);
         request.AddParameter("fileType", fileType);
