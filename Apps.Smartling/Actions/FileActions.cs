@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Globalization;
+using System.Net;
 using System.Net.Mime;
 using Apps.Smartling.Api;
 using Apps.Smartling.Models;
@@ -11,6 +12,7 @@ using Apps.Smartling.Models.Responses;
 using Apps.Smartling.Models.Responses.Files;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Files;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Utils.Extensions.Files;
@@ -24,6 +26,64 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
     : SmartlingInvocable(invocationContext)
 {
     #region Get
+
+    [Action("Search files", Description = "List recently uploaded source files with filters and pagination.")]
+    public async Task<SearchFilesResponse> SearchFiles([ActionParameter] SearchFilesRequest input)
+    {
+        const int pageSize = 100;
+        var offset = 0;
+        var total = (int?)null;
+
+        var all = new List<SourceFileSummaryDto>();
+
+        while (true)
+        {
+            var request = new SmartlingRequest($"/files-api/v2/projects/{ProjectId}/files/list", Method.Get);
+
+            request.AddQueryParameter("orderBy", "lastUploaded_desc");
+
+            request.AddQueryParameter("limit", pageSize.ToString());
+            request.AddQueryParameter("offset", offset.ToString());
+
+            if (!string.IsNullOrWhiteSpace(input.FileUriContains))
+                request.AddQueryParameter("uriMask", input.FileUriContains);
+            if (input.FileTypes != null)
+            {
+                foreach (var t in input.FileTypes.Where(s => !string.IsNullOrWhiteSpace(s)))
+                    request.AddQueryParameter("fileTypes[]", t);
+            }
+
+            if (input.UploadedAfter.HasValue)
+                request.AddQueryParameter("lastUploadedAfter", FormatSmartlingDate(input.UploadedAfter.Value));
+
+            if (input.UploadedBefore.HasValue)
+                request.AddQueryParameter("lastUploadedBefore", FormatSmartlingDate(input.UploadedBefore.Value));
+
+
+            var resp = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsPagedWrapper<SourceFileSummaryDto>>>(request);
+            var data = resp.Response.Data;
+
+            if (total is null) total = data.TotalCount;
+
+            var pageItems = data.Items?.ToList() ?? new List<SourceFileSummaryDto>();
+            if (pageItems.Count == 0)
+                break;
+
+            all.AddRange(pageItems);
+            offset += pageItems.Count;
+
+            if (offset >= total)
+                break;
+        }
+
+        return new SearchFilesResponse
+        {
+            Items = all,
+            TotalCount = total ?? all.Count
+        };
+    }
+    private static string FormatSmartlingDate(DateTime dtUtc) =>
+    dtUtc.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
 
     [Action("List source files within job", Description = "List all source files within a job.")]
     public async Task<ListFilesResponse> ListFilesWithinJob([ActionParameter] JobIdentifier jobIdentifier)
