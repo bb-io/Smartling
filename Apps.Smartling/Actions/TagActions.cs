@@ -17,7 +17,6 @@ public class TagActions(InvocationContext invocationContext) : SmartlingInvocabl
     [Action("Add tags to strings by hashcode", Description = "Add any amount of tags to any strings.")]
     public async Task AddTagsToStrings([ActionParameter] StringHashcodesIdentifier strings, [ActionParameter] AddTagsRequest input)
     {
-
         var request = new SmartlingRequest($"/tags-api/v2/projects/{ProjectId}/strings/tags/add", Method.Post);
         request.AddJsonBody(new
         {
