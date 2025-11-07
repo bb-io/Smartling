@@ -5,7 +5,6 @@ using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Invocation;
-using DocumentFormat.OpenXml.Office2016.Excel;
 using Newtonsoft.Json.Linq;
 using RestSharp;
 
