@@ -5,7 +5,6 @@ using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Invocation;
-using DocumentFormat.OpenXml.Office2016.Excel;
 using Newtonsoft.Json.Linq;
 using RestSharp;
 
@@ -17,12 +16,11 @@ public class TagActions(InvocationContext invocationContext) : SmartlingInvocabl
     [Action("Add tags to strings by hashcode", Description = "Add any amount of tags to any strings.")]
     public async Task AddTagsToStrings([ActionParameter] StringHashcodesIdentifier strings, [ActionParameter] AddTagsRequest input)
     {
-
         var request = new SmartlingRequest($"/tags-api/v2/projects/{ProjectId}/strings/tags/add", Method.Post);
         request.AddJsonBody(new
         {
             tags = input.Tags,
-            stringHashCodes = strings.Hashcodes,
+            stringHashcodes = strings.Hashcodes,
         });
         var response = await Client.ExecuteWithErrorHandling(request);
 
