@@ -16,7 +16,7 @@ namespace Tests.Smartling
             };
             var input = new Apps.Smartling.Models.Requests.Tags.AddTagsRequest
             {
-                Tags = new List<string> { "BB Test tag 1" }
+                Tags = new List<string> { "BB Test tag 2" }
             };
             await action.AddTagsToStrings(strings, input);
 

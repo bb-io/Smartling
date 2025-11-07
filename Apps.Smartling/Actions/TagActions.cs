@@ -20,7 +20,7 @@ public class TagActions(InvocationContext invocationContext) : SmartlingInvocabl
         request.AddJsonBody(new
         {
             tags = input.Tags,
-            stringHashCodes = strings.Hashcodes,
+            stringHashcodes = strings.Hashcodes,
         });
         var response = await Client.ExecuteWithErrorHandling(request);
 
