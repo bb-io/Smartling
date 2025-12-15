@@ -23,17 +23,23 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
     #region Get
 
     [Action("Get job", Description = "Get the details of a job.")]
-    public async Task<JobDto> GetJob([ActionParameter] JobIdentifier jobIdentifier)
+    public async Task<JobDto> GetJob(
+        [ActionParameter] ProjectIdentifier project, 
+        [ActionParameter] JobIdentifier jobIdentifier)
     {
-        var request = new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}", 
-            Method.Get);
+        string projectId = await GetProjectId(project.ProjectId);
+        var request = new SmartlingRequest(
+            $"/jobs-api/v3/projects/{projectId}/jobs/{jobIdentifier.TranslationJobUid}", 
+            Method.Get
+        );
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<JobDto>>(request);
         var job = response.Response.Data;
         return job;
     }  
     
     [Action("Get job word count", Description = "Get the word count of a job.")]
-    public async Task<WordCountResponse> GetJobWordCount([ActionParameter] JobIdentifier jobIdentifier,
+    public async Task<WordCountResponse> GetJobWordCount(
+        [ActionParameter] JobIdentifier jobIdentifier,
         [ActionParameter] DatesOptionalRequest datesOptionalRequest)
     {
         var startDate = datesOptionalRequest.StartDate?.ToString("yyyy-MM-dd") ?? DateTime.Parse("2024-01-01").ToString("yyyy-MM-dd");
@@ -49,18 +55,20 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
 
     [Action("Get job progress", Description = "Get the progress of a job.")]
     public async Task<JobProgressResponse> GetJobProgress(
-    [ActionParameter] JobIdentifier jobIdentifier,
-    [ActionParameter] TargetLocaleOptionalIdentifier targetLocaleRequest)
+        [ActionParameter] ProjectIdentifier project,
+        [ActionParameter] JobIdentifier jobIdentifier,
+        [ActionParameter] TargetLocaleOptionalIdentifier targetLocaleRequest)
     {
+        string projectId = await GetProjectId(project.ProjectId);
+
         var queryParams = string.Empty;
         if (!string.IsNullOrEmpty(targetLocaleRequest?.TargetLocaleId))
-        {
             queryParams = $"?targetLocaleId={targetLocaleRequest.TargetLocaleId}";
-        }
 
         var request = new SmartlingRequest(
-            $"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}/progress{queryParams}",
-            Method.Get);
+            $"/jobs-api/v3/projects/{projectId}/jobs/{jobIdentifier.TranslationJobUid}/progress{queryParams}",
+            Method.Get
+        );
 
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<JobProgressDto>>(request);
 
@@ -68,10 +76,13 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
     }
 
     [Action("List job schedule items", Description = "List all schedule items for a specific job..")]
-    public async Task<ListScheduleItemsResponse> ListJobScheduleItems([ActionParameter] JobIdentifier jobIdentifier,
+    public async Task<ListScheduleItemsResponse> ListJobScheduleItems(
+        [ActionParameter] ProjectIdentifier project, 
+        [ActionParameter] JobIdentifier jobIdentifier,
         [ActionParameter] TargetLocaleOptionalIdentifier targetLocale)
     {
-        var endpoint = $"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}/schedule";
+        string projectId = await GetProjectId(project.ProjectId);
+        var endpoint = $"/jobs-api/v3/projects/{projectId}/jobs/{jobIdentifier.TranslationJobUid}/schedule";
         var request = new SmartlingRequest(endpoint, Method.Get);
 
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<ScheduleItemDto>>>(request);
@@ -87,13 +98,16 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
 
     [Action("Search jobs", Description = "List jobs that match the specified filter options. If no parameters are " +
                                          "specified, all jobs will be returned.")]
-    public async Task<SearchJobsResponse> SearchJobs([ActionParameter] SearchJobsRequest input)
+    public async Task<SearchJobsResponse> SearchJobs(
+        [ActionParameter] ProjectIdentifier project, 
+        [ActionParameter] SearchJobsRequest input)
     {
+        string projectId = await GetProjectId(project.ProjectId);
         var translationJobStatus = input.TranslationJobStatus == null ? "" : string.Join(",", input.TranslationJobStatus);
-        var request =
-            new SmartlingRequest(
-                $"/jobs-api/v3/projects/{ProjectId}/jobs?translationJobStatus={translationJobStatus}&limit={input.Limit}",
-                Method.Get);
+        var request = new SmartlingRequest(
+            $"/jobs-api/v3/projects/{projectId}/jobs?translationJobStatus={translationJobStatus}&limit={input.Limit}",
+            Method.Get
+        );
 
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<JobDto>>>(request);
         var jobs = response.Response.Data.Items;
@@ -118,10 +132,13 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
     #region Post
     
     [Action("Create job", Description = "Create a new job.")]
-    public async Task<JobDto> CreateJob([ActionParameter] CreateJobRequest input, 
+    public async Task<JobDto> CreateJob(
+        [ActionParameter] ProjectIdentifier project, 
+        [ActionParameter] CreateJobRequest input, 
         [ActionParameter] TargetLocalesIdentifier targetLocales)
     {
-        var request = new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs", Method.Post);
+        string projectId = await GetProjectId(project.ProjectId);
+        var request = new SmartlingRequest($"/jobs-api/v3/projects/{projectId}/jobs", Method.Post);
         request.AddJsonBody(new
         {
             jobName = input.JobName,
@@ -131,7 +148,7 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
             referenceNumber = input.ReferenceNumber,
             callbackUrl = input.CallbackUrl ??
                           $"{InvocationContext.UriInfo.BridgeServiceUrl.ToString().TrimEnd('/')}{ApplicationConstants.SmartlingBridgePath}"
-                              .SetQueryParameter("id", ProjectId),
+                              .SetQueryParameter("id", projectId),
             callbackMethod = input.CallbackMethod ?? "POST"
         });
 
@@ -141,12 +158,17 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
     }
 
     [Action("Modify translation job schedule", Description = "Modifies translation job schedule")]
-    public async Task<ResponseData> ModifySchedule([ActionParameter] JobIdentifier jobIdentifier,
-        [ActionParameter] ModifyScheduleRequest input, [ActionParameter] TargetLocaleIdentifier targetLocale)
+    public async Task<ResponseData> ModifySchedule(
+        [ActionParameter] ProjectIdentifier project, 
+        [ActionParameter] JobIdentifier jobIdentifier,
+        [ActionParameter] ModifyScheduleRequest input, 
+        [ActionParameter] TargetLocaleIdentifier targetLocale)
     {
-        var request =
-            new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}/schedule",
-                Method.Post);
+        string projectId = await GetProjectId(project.ProjectId);
+        var request = new SmartlingRequest(
+            $"/jobs-api/v3/projects/{projectId}/jobs/{jobIdentifier.TranslationJobUid}/schedule",
+            Method.Post
+        );
 
         var body = new
         {
@@ -169,14 +191,17 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
     }
 
     [Action("Add locale to job", Description = "Add a locale to a job.")]
-    public async Task<JobIdentifier> AddLocaleToJob([ActionParameter] JobIdentifier jobIdentifier, 
+    public async Task<JobIdentifier> AddLocaleToJob(
+        [ActionParameter] ProjectIdentifier project, 
+        [ActionParameter] JobIdentifier jobIdentifier, 
         [ActionParameter] TargetLocaleIdentifier targetLocale, 
         [ActionParameter] [Display("Sync content")] bool? syncContent)
     {
-        var request =
-            new SmartlingRequest(
-                $"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}/locales/{targetLocale.TargetLocaleId}",
-                Method.Post);
+        string projectId = await GetProjectId(project.ProjectId);
+        var request = new SmartlingRequest(
+            $"/jobs-api/v3/projects/{projectId}/jobs/{jobIdentifier.TranslationJobUid}/locales/{targetLocale.TargetLocaleId}",
+            Method.Post
+        );
         request.AddJsonBody(new
         {
             syncContent = syncContent ?? true
@@ -187,17 +212,21 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
     }
     
     [Action("Authorize job", Description = "Authorize all content within a job.")]
-    public async Task<JobIdentifier> AuthorizeJob([ActionParameter] JobIdentifier jobIdentifier, 
-        [ActionParameter] TargetLocalesIdentifier targetLocales, [ActionParameter] WorkflowIdentifier workflowIdentifier)
+    public async Task<JobIdentifier> AuthorizeJob(
+        [ActionParameter] ProjectIdentifier project, 
+        [ActionParameter] JobIdentifier jobIdentifier, 
+        [ActionParameter] TargetLocalesIdentifier targetLocales, 
+        [ActionParameter] WorkflowIdentifier workflowIdentifier)
     {
         if ((targetLocales.TargetLocaleIds != null && workflowIdentifier.WorkflowUid == null)
             || (targetLocales.TargetLocaleIds == null && workflowIdentifier.WorkflowUid != null))
             throw new PluginMisconfigurationException("Please specify both target locales and workflow or leave both unspecified.");
 
+        string projectId = await GetProjectId(project.ProjectId);
         for (var i = 0; i < 6; i++)
         {
             var getJobRequest = 
-                new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}", 
+                new SmartlingRequest($"/jobs-api/v3/projects/{projectId}/jobs/{jobIdentifier.TranslationJobUid}", 
                     Method.Get);
             var getJobResponse = await Client.ExecuteWithErrorHandling<ResponseWrapper<JobDto>>(getJobRequest);
             var job = getJobResponse.Response.Data;
@@ -208,9 +237,10 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
                 break;
         }
 
-        var authorizeJobRequest = 
-            new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}/authorize", 
-                Method.Post);
+        var authorizeJobRequest = new SmartlingRequest(
+            $"/jobs-api/v3/projects/{projectId}/jobs/{jobIdentifier.TranslationJobUid}/authorize", 
+            Method.Post
+        );
 
         if (targetLocales.TargetLocaleIds == null)
             authorizeJobRequest.AddJsonBody(new { });
@@ -230,20 +260,30 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
     }
 
     [Action("Close job", Description = "Close a completed job.")]
-    public async Task<JobIdentifier> CloseJob([ActionParameter] JobIdentifier jobIdentifier)
+    public async Task<JobIdentifier> CloseJob(
+        [ActionParameter] ProjectIdentifier project, 
+        [ActionParameter] JobIdentifier jobIdentifier)
     {
-        var request = new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}/close", 
-            Method.Post);
+        string projectId = await GetProjectId(project.ProjectId);
+        var request = new SmartlingRequest(
+            $"/jobs-api/v3/projects/{projectId}/jobs/{jobIdentifier.TranslationJobUid}/close", 
+            Method.Post
+        );
         await Client.ExecuteWithErrorHandling(request);
         return jobIdentifier;
     }
     
     [Action("Cancel job", Description = "Cancel a job.")]
-    public async Task<JobIdentifier> CancelJob([ActionParameter] JobIdentifier jobIdentifier,
+    public async Task<JobIdentifier> CancelJob(
+        [ActionParameter] ProjectIdentifier project, 
+        [ActionParameter] JobIdentifier jobIdentifier,
         [ActionParameter] [Display("Reason")] string? reason)
     {
-        var request = new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}/cancel", 
-            Method.Post);
+        string projectId = await GetProjectId(project.ProjectId);
+        var request = new SmartlingRequest(
+            $"/jobs-api/v3/projects/{projectId}/jobs/{jobIdentifier.TranslationJobUid}/cancel", 
+            Method.Post
+        );
         request.AddJsonBody(new { reason });
         await Client.ExecuteWithErrorHandling(request);
         return jobIdentifier;
@@ -254,16 +294,23 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
     #region Put
     
     [Action("Update job", Description = "Update a job. Specify only fields that need to be updated.")]
-    public async Task<JobDto> UpdateJob([ActionParameter] JobIdentifier jobIdentifier,
+    public async Task<JobDto> UpdateJob(
+        [ActionParameter] ProjectIdentifier project, 
+        [ActionParameter] JobIdentifier jobIdentifier,
         [ActionParameter] UpdateJobRequest input)
     {
-        var getJobRequest = new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}", 
-            Method.Get);
+        string projectId = await GetProjectId(project.ProjectId);
+        var getJobRequest = new SmartlingRequest(
+            $"/jobs-api/v3/projects/{projectId}/jobs/{jobIdentifier.TranslationJobUid}", 
+            Method.Get
+        );
         var getJobResponse = await Client.ExecuteWithErrorHandling<ResponseWrapper<JobDto>>(getJobRequest);
         var job = getJobResponse.Response.Data;
         
-        var updateJobRequest = new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}", 
-            Method.Put);
+        var updateJobRequest = new SmartlingRequest(
+            $"/jobs-api/v3/projects/{projectId}/jobs/{jobIdentifier.TranslationJobUid}", 
+            Method.Put
+        );
         updateJobRequest.AddJsonBody(new
         {
             jobName = input.JobName ?? job.JobName,
@@ -284,10 +331,15 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
     #region Delete
 
     [Action("Delete job", Description = "Delete a job. Only job that is in CANCELLED status can be deleted.")]
-    public async Task DeleteJob([ActionParameter] JobIdentifier jobIdentifier) 
+    public async Task DeleteJob(
+        [ActionParameter] ProjectIdentifier project, 
+        [ActionParameter] JobIdentifier jobIdentifier)
     {
-        var request = new SmartlingRequest($"/jobs-api/v3/projects/{ProjectId}/jobs/{jobIdentifier.TranslationJobUid}", 
-            Method.Delete);
+        string projectId = await GetProjectId(project.ProjectId);
+        var request = new SmartlingRequest(
+            $"/jobs-api/v3/projects/{projectId}/jobs/{jobIdentifier.TranslationJobUid}", 
+            Method.Delete
+        );
         await Client.ExecuteWithErrorHandling(request);
     }
     

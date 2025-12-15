@@ -4,9 +4,7 @@ using Apps.Smartling.Models.Responses;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Utils.Extensions.Sdk;
-using Blackbird.Applications.Sdk.Utils.Extensions.String;
 using Blackbird.Applications.Sdk.Utils.RestSharp;
-using DocumentFormat.OpenXml.Drawing;
 using Newtonsoft.Json;
 using RestSharp;
 
@@ -31,7 +29,7 @@ public class SmartlingClient : BlackBirdRestClient
         throw new PluginApplicationException($"{errors.Response.Code}: {string.Join("; ", errors.Response.Errors.Select(error => error.Message))}");
     }
 
-    private string GetAccessToken(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders)
+    private static string GetAccessToken(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders)
     {
         var client = new RestClient(new Uri(Urls.ApiUrl));
         var request = new RestRequest("/auth-api/v2/authenticate", Method.Post);

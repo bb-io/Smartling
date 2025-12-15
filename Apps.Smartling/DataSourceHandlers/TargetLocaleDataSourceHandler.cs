@@ -1,5 +1,5 @@
 ﻿using Apps.Smartling.Api;
-using Apps.Smartling.Models.Dtos;
+using Apps.Smartling.Models.Dtos.Project;
 using Apps.Smartling.Models.Responses;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 using Blackbird.Applications.Sdk.Common.Invocation;
@@ -18,7 +18,7 @@ public class TargetLocaleDataSourceHandler : SmartlingInvocable, IAsyncDataSourc
         CancellationToken cancellationToken)
     {
         var request = new SmartlingRequest($"/projects-api/v2/projects/{ProjectId}", Method.Get);
-        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ProjectDto>>(request);
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ProjectDtoWithTargetLocales>>(request);
         var targetLocales = response.Response.Data.TargetLocales
             .Where(locale => context.SearchString == null 
                              || locale.Description.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase))

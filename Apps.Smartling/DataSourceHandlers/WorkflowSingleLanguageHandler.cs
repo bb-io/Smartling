@@ -2,6 +2,7 @@
 using Apps.Smartling.Models.Dtos;
 using Apps.Smartling.Models.Dtos.Jobs;
 using Apps.Smartling.Models.Dtos.Locales;
+using Apps.Smartling.Models.Dtos.Project;
 using Apps.Smartling.Models.Identifiers;
 using Apps.Smartling.Models.Responses;
 using Blackbird.Applications.Sdk.Common;
@@ -29,7 +30,7 @@ public class WorkflowSingleLanguageHandler : SmartlingInvocable, IAsyncDataSourc
             throw new PluginMisconfigurationException("Please enter target locale first.");
         
         var getProjectRequest = new SmartlingRequest($"/projects-api/v2/projects/{ProjectId}", Method.Get);
-        var getProjectResponse = await Client.ExecuteWithErrorHandling<ResponseWrapper<ProjectDto>>(getProjectRequest);
+        var getProjectResponse = await Client.ExecuteWithErrorHandling<ResponseWrapper<ProjectDtoWithTargetLocales>>(getProjectRequest);
         var project = getProjectResponse.Response.Data;
 
         var getWorkflowsRequest = new SmartlingRequest($"/workflows-api/v3/projects/{ProjectId}/authorization/workflows", 

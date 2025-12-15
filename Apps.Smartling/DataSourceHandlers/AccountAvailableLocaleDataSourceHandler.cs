@@ -1,5 +1,6 @@
 ﻿using Apps.Smartling.Api;
 using Apps.Smartling.Models.Dtos;
+using Apps.Smartling.Models.Dtos.Project;
 using Apps.Smartling.Models.Identifiers;
 using Apps.Smartling.Models.Responses;
 using Blackbird.Applications.Sdk.Common.Dynamic;
@@ -30,7 +31,7 @@ public class AccountAvailableLocaleDataSourceHandler : SmartlingInvocable, IAsyn
         foreach (var project in projects)
         {
             var getProjectRequest = new SmartlingRequest($"/projects-api/v2/projects/{project.ProjectId}", Method.Get);
-            var getProjectResponse = await Client.ExecuteWithErrorHandling<ResponseWrapper<ProjectDto>>(getProjectRequest);
+            var getProjectResponse = await Client.ExecuteWithErrorHandling<ResponseWrapper<ProjectDtoWithTargetLocales>>(getProjectRequest);
             var projectDto = getProjectResponse.Response.Data;
             locales[projectDto.SourceLocaleId] = projectDto.SourceLocaleDescription;
 
