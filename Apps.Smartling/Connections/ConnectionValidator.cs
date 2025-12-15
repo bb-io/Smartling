@@ -25,10 +25,24 @@ public class ConnectionValidator : IConnectionValidator
                 IsValid = false,
                 Message = exception.Message
             };
-        } 
-        
-        var projectId = authProviders.Get(CredsNames.ProjectId).Value;
-        var request = new SmartlingRequest($"/projects-api/v2/projects/{projectId}", Method.Get);
+        }
+
+        var connectionType = authProviders.Get(CredsNames.ConnectionType).Value;
+        string endpoint = string.Empty;
+
+        switch (connectionType)
+        {
+            case ConnectionTypes.AccountWide:
+                string accountUid = authProviders.Get(CredsNames.AccountUid).Value;
+                endpoint = $"/accounts-api/v2/accounts/{accountUid}/projects";
+                break;
+            case ConnectionTypes.ProjectWide:
+                string projectId = authProviders.Get(CredsNames.ProjectId).Value;
+                endpoint = $"/projects-api/v2/projects/{projectId}";
+                break;
+        }
+
+        var request = new SmartlingRequest(endpoint, Method.Get);
 
         try
         {

@@ -1,34 +1,50 @@
-﻿using Blackbird.Applications.Sdk.Common.Authentication;
+﻿using Microsoft.Extensions.Configuration;
+using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Invocation;
-using Microsoft.Extensions.Configuration;
 
-namespace SmartlingTests.Base
+namespace SmartlingTests.Base;
+
+public class TestBase
 {
-    public class TestBase
+    public List<IEnumerable<AuthenticationCredentialsProvider>> CredsGroups { get; set; }
+
+    public List<InvocationContext> InvocationContexts { get; set; }
+
+    public InvocationContext InvocationContext { get; set; }
+
+    public FileManager FileManager { get; set; }
+
+    public TestContext? TestContext { get; set; }
+
+    public TestBase()
     {
-        public IEnumerable<AuthenticationCredentialsProvider> Creds { get; set; }
+        var config = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
+        CredsGroups = config.GetSection("ConnectionDefinition")
+            .GetChildren()
+            .Select(section =>
+                section.GetChildren()
+               .Select(child => new AuthenticationCredentialsProvider(child.Key, child.Value))
+            )
+            .ToList();
 
-        public InvocationContext InvocationContext { get; set; }
+        var relativePath = config.GetSection("TestFolder").Value;
+        var projectDirectory = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.FullName;
+        var folderLocation = Path.Combine(projectDirectory, relativePath);
 
-        public FileManager FileManager { get; set; }
+        InitializeInvocationContext();
 
-        public TestBase()
+        FileManager = new FileManager();
+    }
+
+    private void InitializeInvocationContext()
+    {
+        InvocationContexts = new List<InvocationContext>();
+        foreach (var credentialGroup in CredsGroups)
         {
-            var config = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
-            Creds = config.GetSection("ConnectionDefinition").GetChildren()
-                .Select(x => new AuthenticationCredentialsProvider(AuthenticationCredentialsRequestLocation.None,x.Key, x.Value)).ToList();
-
-
-            var relativePath = config.GetSection("TestFolder").Value;
-            var projectDirectory = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.FullName;
-            var folderLocation = Path.Combine(projectDirectory, relativePath);
-
-            InvocationContext = new InvocationContext
+            InvocationContexts.Add(new InvocationContext
             {
-                AuthenticationCredentialsProviders = Creds,
-            };
-
-            FileManager = new FileManager();
+                AuthenticationCredentialsProviders = credentialGroup
+            });
         }
     }
 }
