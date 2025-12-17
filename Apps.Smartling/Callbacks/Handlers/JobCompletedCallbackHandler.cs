@@ -9,7 +9,8 @@ namespace Apps.Smartling.Callbacks.Handlers;
 
 public class JobCompletedCallbackHandler(
     InvocationContext invocationContext,
-    [WebhookParameter] JobOptionalIdentifier optionalIdentifier) : CallbackHandler(invocationContext),
+    [WebhookParameter] JobOptionalIdentifier optionalIdentifier,
+    [WebhookParameter] ProjectIdentifier projectIdentifier) : CallbackHandler(invocationContext),
     IAfterSubscriptionWebhookEventHandler<JobCompletedPayload>
 {
     protected override string Event => "job.completed";
@@ -25,7 +26,10 @@ public class JobCompletedCallbackHandler(
         }
         
         var jobActions = new JobActions(InvocationContext);
-        var job = await jobActions.GetJob(new() { TranslationJobUid = optionalIdentifier.TranslationJobUid });
+        var job = await jobActions.GetJob(
+            projectIdentifier,
+            new() { TranslationJobUid = optionalIdentifier.TranslationJobUid }
+        );
 
         await LogToWebhookAsync($"Retrieved job with status '{job.JobStatus}' for job UID: {optionalIdentifier.TranslationJobUid}");
 

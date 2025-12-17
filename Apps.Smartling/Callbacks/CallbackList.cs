@@ -15,8 +15,10 @@ public class CallbackList
 
     [Webhook("On job completed", typeof(JobCompletedCallbackHandler),
         Description = "This event is triggered when a job is completed.")]
-    public async Task<WebhookResponse<JobCompletedPayload>> OnJobCompleted(WebhookRequest request,
-        [WebhookParameter] JobOptionalIdentifier jobOptionalRequest)
+    public async Task<WebhookResponse<JobCompletedPayload>> OnJobCompleted(
+        WebhookRequest request,
+        [WebhookParameter] JobOptionalIdentifier jobOptionalRequest,
+        [WebhookParameter] ProjectIdentifier projectIdentifier)
     {
         var result = await HandleCallback<JobCompletedPayload>(request);
         if (jobOptionalRequest.TranslationJobUid != null && jobOptionalRequest.TranslationJobUid == result.Result?.TranslationJobUid)
@@ -29,8 +31,10 @@ public class CallbackList
 
     [Webhook("On job cancelled", typeof(JobCancelledCallbackHandler),
         Description = "This event is triggered when a job is cancelled.")]
-    public async Task<WebhookResponse<JobCancelledPayload>> OnJobCancelled(WebhookRequest request,
-        [WebhookParameter] JobOptionalIdentifier jobOptionalRequest)
+    public async Task<WebhookResponse<JobCancelledPayload>> OnJobCancelled(
+        WebhookRequest request,
+        [WebhookParameter] JobOptionalIdentifier jobOptionalRequest,
+        [WebhookParameter] ProjectIdentifier projectIdentifier)
     {
         var result = await HandleCallback<JobCancelledPayload>(request);
         if (jobOptionalRequest.TranslationJobUid != null && jobOptionalRequest.TranslationJobUid == result.Result?.TranslationJobUid)
@@ -60,8 +64,10 @@ public class CallbackList
     #region Manual callbacks
 
     [Webhook("On job completed (manual)", Description = "This manual event is triggered when a job is completed.")]
-    public async Task<WebhookResponse<JobCompletedPayload>> OnJobCompletedManual(WebhookRequest request,
-        [WebhookParameter] JobOptionalIdentifier jobOptionalRequest)
+    public async Task<WebhookResponse<JobCompletedPayload>> OnJobCompletedManual(
+        WebhookRequest request,
+        [WebhookParameter] JobOptionalIdentifier jobOptionalRequest,
+        [WebhookParameter] ProjectIdentifier projectIdentifier)
     {
         var result = await HandleCallback<JobCompletedPayload>(request);
         if (jobOptionalRequest.TranslationJobUid != null && jobOptionalRequest.TranslationJobUid == result.Result?.TranslationJobUid)
@@ -73,8 +79,10 @@ public class CallbackList
     }
 
     [Webhook("On job cancelled (manual)", Description = "This manual event is triggered when a job is cancelled.")]
-    public async Task<WebhookResponse<JobCancelledPayload>> OnJobCancelledManual(WebhookRequest request,
-        [WebhookParameter] JobOptionalIdentifier jobOptionalRequest)
+    public async Task<WebhookResponse<JobCancelledPayload>> OnJobCancelledManual(
+        WebhookRequest request,
+        [WebhookParameter] JobOptionalIdentifier jobOptionalRequest,
+        [WebhookParameter] ProjectIdentifier projectIdentifier)
     {
         var result = await HandleCallback<JobCancelledPayload>(request);
         if (jobOptionalRequest.TranslationJobUid != null && jobOptionalRequest.TranslationJobUid == result.Result?.TranslationJobUid)

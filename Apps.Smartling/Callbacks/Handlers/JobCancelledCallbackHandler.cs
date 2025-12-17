@@ -9,7 +9,8 @@ namespace Apps.Smartling.Callbacks.Handlers;
 
 public class JobCancelledCallbackHandler(
     InvocationContext invocationContext,
-    [WebhookParameter] JobOptionalIdentifier optionalIdentifier) : CallbackHandler(invocationContext),
+    [WebhookParameter] JobOptionalIdentifier optionalIdentifier,
+    [WebhookParameter] ProjectIdentifier projectIdentifier) : CallbackHandler(invocationContext),
     IAfterSubscriptionWebhookEventHandler<JobCancelledPayload>
 {
     protected override string Event => "job.cancelled";
@@ -22,7 +23,10 @@ public class JobCancelledCallbackHandler(
         }
 
         var jobActions = new JobActions(InvocationContext);
-        var job = await jobActions.GetJob(new() { TranslationJobUid = optionalIdentifier.TranslationJobUid });
+        var job = await jobActions.GetJob(
+            projectIdentifier, 
+            new() { TranslationJobUid = optionalIdentifier.TranslationJobUid }
+        );
 
         if (job.JobStatus == "CANCELLED")
         {
