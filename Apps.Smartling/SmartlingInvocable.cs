@@ -14,39 +14,34 @@ namespace Apps.Smartling;
 public class SmartlingInvocable : BaseInvocable
 {
     protected readonly SmartlingClient Client;
-    private readonly IEnumerable<AuthenticationCredentialsProvider> _credentials;
+    protected readonly IEnumerable<AuthenticationCredentialsProvider> Credentials;
 
     protected SmartlingInvocable(InvocationContext invocationContext) : base(invocationContext)
     {
-        _credentials = invocationContext.AuthenticationCredentialsProviders;
-        Client = new(_credentials);
+        Credentials = invocationContext.AuthenticationCredentialsProviders;
+        Client = new(Credentials);
     }
     
     protected async Task<string> GetAccountUid()
     {
-        string connectionType = _credentials.Get(CredsNames.ConnectionType).Value;
-        string accountId = string.Empty;
-        
+        string connectionType = Credentials.Get(CredsNames.ConnectionType).Value;
+
         switch (connectionType)
         {
             case ConnectionTypes.AccountWide:
-                accountId = _credentials.Get(CredsNames.AccountUid).Value;
-                break;
+                return Credentials.Get(CredsNames.AccountUid).Value;
             case ConnectionTypes.ProjectWide:
                 var request = new SmartlingRequest($"/projects-api/v2/projects/{GetProjectId()}", Method.Get);
                 var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ProjectDtoWithTargetLocales>>(request);
-                accountId = response.Response.Data.AccountUid;
-                break;
+                return response.Response.Data.AccountUid;
             default:
                 throw new Exception($"Unsupported connection type: {connectionType}");
         }
-
-        return accountId;
     }
 
     protected async Task<string> GetProjectId(string? inputProjectId = null)
     {
-        string connectionType = _credentials.Get(CredsNames.ConnectionType).Value;
+        string connectionType = Credentials.Get(CredsNames.ConnectionType).Value;
 
         return connectionType switch
         {
@@ -56,7 +51,7 @@ public class SmartlingInvocable : BaseInvocable
 
             ConnectionTypes.ProjectWide =>
                 inputProjectId
-                ?? _credentials.Get(CredsNames.ProjectId).Value
+                ?? Credentials.Get(CredsNames.ProjectId).Value
                 ?? throw new PluginMisconfigurationException("Please specify the project ID in the connection or input"),
 
             _ => throw new Exception($"Unsupported connection type: {connectionType}")
