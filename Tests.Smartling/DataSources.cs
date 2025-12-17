@@ -40,11 +40,11 @@ public class DataSources : TestBaseMultipleConnections
         Assert.IsNotNull(response);
     }
 
-    [TestMethod, ContextDataSource(ConnectionTypes.ProjectWide)]
-    public async Task ProjectDataHandlerReturnsValues(InvocationContext context)
+    [TestMethod, ContextDataSource(ConnectionTypes.AccountWide)]
+    public async Task ProjectContextDataHandlerReturnsValues(InvocationContext context)
     {
         // Arrange
-        var project = new ProjectIdentifier { ProjectId = string.Empty };
+        var project = new ProjectIdentifier { ProjectId = "2dbb9dabf" };
         var dataHandler = new ProjectContextDataSourceHandler(context, project);
 
         // Act

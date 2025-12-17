@@ -16,7 +16,7 @@ public class PollingTests : TestBaseMultipleConnections
     public async Task OnJobCompleted(InvocationContext context)
     {
         // Arrange
-        var project = new ProjectIdentifier { ProjectId = string.Empty };
+        var project = new ProjectIdentifier { ProjectId = "2dbb9dabf" };
         var action = new PollingList(context);
         var customDate = DateTime.ParseExact("Mar 27, 2025, 6:31 PM", "MMM dd, yyyy, h:mm tt", CultureInfo.InvariantCulture);
         var request = new PollingEventRequest<DateMemory>
