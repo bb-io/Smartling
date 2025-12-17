@@ -1,61 +1,72 @@
-﻿using Apps.Smartling.DataSourceHandlers;
-using SmartlingTests.Base;
+﻿using Tests.Smartling.Base;
+using Apps.Smartling.Constants;
+using Apps.Smartling.DataSourceHandlers;
+using Apps.Smartling.Models.Identifiers;
+using Blackbird.Applications.Sdk.Common.Dynamic;
+using Blackbird.Applications.Sdk.Common.Invocation;
 
-namespace Tests.Smartling
+namespace Tests.Smartling;
+
+[TestClass]
+public class DataSources : TestBaseMultipleConnections
 {
-    [TestClass]
-    public class DataSources : TestBase
+    [TestMethod, ContextDataSource]
+    public async Task FileDataHandlerReturnsValues(InvocationContext context)
     {
-        [TestMethod]
-        public async Task FileDataHandlerReturnsValues()
-        {
-            var dataHandler = new FileDataSourceHandler(InvocationContext);
+        // Arrange
+        var project = new ProjectIdentifier { ProjectId = "2dbb9dabf" };
+        var dataHandler = new FileDataSourceHandler(context, project);
 
-            var response = await dataHandler.GetDataAsync(new Blackbird.Applications.Sdk.Common.Dynamic.DataSourceContext { SearchString=""}, CancellationToken.None);
-            foreach (var item in response)
-            {
-                Assert.IsNotNull(item);
-                Console.WriteLine($"{item.Key} - {item.Value}");
-            }
-        }
+        // Act
+        var response = await dataHandler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
 
-        [TestMethod]
-        public async Task JobDataHandlerReturnsValues()
-        {
-            var dataHandler = new JobDataSourceHandler(InvocationContext);
+        // Assert
+        PrintDataHandlerResult(response);
+        Assert.IsNotNull(response);
+    }
 
-            var response = await dataHandler.GetDataAsync(new Blackbird.Applications.Sdk.Common.Dynamic.DataSourceContext { SearchString = "" }, CancellationToken.None);
-            foreach (var item in response)
-            {
-                Assert.IsNotNull(item);
-                Console.WriteLine($"{item.Key} - {item.Value}");
-            }
-        }
+    [TestMethod, ContextDataSource]
+    public async Task JobDataHandlerReturnsValues(InvocationContext context)
+    {
+        // Arrange
+        var project = new ProjectIdentifier { ProjectId = "2dbb9dabf" };
+        var dataHandler = new JobDataSourceHandler(context, project);
 
-        [TestMethod]
-        public async Task ProjectDataHandlerReturnsValues()
-        {
-            var dataHandler = new ProjectContextDataSourceHandler(InvocationContext);
+        // Act
+        var response = await dataHandler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
 
-            var response = await dataHandler.GetDataAsync(new Blackbird.Applications.Sdk.Common.Dynamic.DataSourceContext { SearchString = "" }, CancellationToken.None);
-            foreach (var item in response)
-            {
-                Assert.IsNotNull(item);
-                Console.WriteLine($"{item.Key} - {item.Value}");
-            }
-        }
+        // Assert
+        PrintDataHandlerResult(response);
+        Assert.IsNotNull(response);
+    }
 
-        [TestMethod]
-        public async Task TargetLocaleDataHandlerReturnsValues()
-        {
-            var dataHandler = new TargetLocaleDataSourceHandler(InvocationContext);
+    [TestMethod, ContextDataSource(ConnectionTypes.ProjectWide)]
+    public async Task ProjectDataHandlerReturnsValues(InvocationContext context)
+    {
+        // Arrange
+        var project = new ProjectIdentifier { ProjectId = string.Empty };
+        var dataHandler = new ProjectContextDataSourceHandler(context, project);
 
-            var response = await dataHandler.GetDataAsync(new Blackbird.Applications.Sdk.Common.Dynamic.DataSourceContext { SearchString = "" }, CancellationToken.None);
-            foreach (var item in response)
-            {
-                Assert.IsNotNull(item);
-                Console.WriteLine($"{item.Key} - {item.Value}");
-            }
-        }
+        // Act
+        var response = await dataHandler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+        
+        // Assert
+        PrintDataHandlerResult(response);
+        Assert.IsNotNull(response);
+    }
+
+    [TestMethod, ContextDataSource]
+    public async Task TargetLocaleDataHandlerReturnsValues(InvocationContext context)
+    {
+        // Arrange
+        var project = new ProjectIdentifier { ProjectId = "2dbb9dabf" };
+        var dataHandler = new TargetLocaleDataSourceHandler(context, project);
+
+        // Act
+        var response = await dataHandler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+
+        // Assert
+        PrintDataHandlerResult(response);
+        Assert.IsNotNull(response);
     }
 }

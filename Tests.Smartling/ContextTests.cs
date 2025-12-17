@@ -1,52 +1,35 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Tests.Smartling.Base;
 using Apps.Smartling.Actions;
+using Apps.Smartling.Models.Identifiers;
 using Apps.Smartling.Models.Requests.Context;
 using Blackbird.Applications.Sdk.Common.Files;
-using SmartlingTests.Base;
+using Blackbird.Applications.Sdk.Common.Invocation;
 
-namespace Tests.Smartling
+namespace Tests.Smartling;
+
+[TestClass]
+public class ContextTests : TestBaseMultipleConnections
 {
-    [TestClass]
-    public class ContextTests : TestBase
+    [TestMethod, ContextDataSource]
+    public async Task UploadNewContext_IsSuccess(InvocationContext context)
     {
-        [TestMethod]
-        public async Task UploadNewContext_IsSuccess()
+        // Arrange
+        var project = new ProjectIdentifier { ProjectId = "2dbb9dabf" };
+        var action = new ContextActions(context, FileManager);
+        var request = new AddProjectContextRequest
         {
-            var action = new ContextActions(InvocationContext,FileManager);
+            ContextFile = new FileReference { Name = "test.MOV" },
+            Name = "FirstFileMOV",
+            ContextMatching = true
+        };
 
-            var response = await action.UploadNewContext(new AddProjectContextRequest
-            {
-                ContextFile = new FileReference { Name = "test.MOV" },
-                Name = "FirstFileMOV",
-                ContextMatching = true
-            });
+        // Act
+        var response = await action.UploadNewContext(project, request);
 
-            Console.WriteLine(response.Response.Code);
-            Console.WriteLine(response.Response.Data.ContextUid);
-            Console.WriteLine(response.Response.Data.ProcessUid);
-            Assert.IsNotNull(response);
-        }
-
-        //[TestMethod]
-        //public async Task LinkContextToString_IsSuccess()
-        //{
-        //    var action = new ContextActions(InvocationContext, FileManager);
-
-        //    var response = await action.LinkContextToString(new AddProjectContextRequest
-        //    {
-        //        ContextFile = new FileReference { Name = "test.MOV" },
-        //        Name = "FirstFileMOV",
-        //        ContextMatching = true
-        //    });
-
-        //    Console.WriteLine(response.Response.Code);
-        //    Console.WriteLine(response.Response.Data.ContextUid);
-        //    Console.WriteLine(response.Response.Data.ProcessUid);
-        //    Assert.IsNotNull(response);
-        //}
+        // Assert
+        TestContext.WriteLine(response.Response.Code);
+        TestContext.WriteLine(response.Response.Data.ContextUid);
+        TestContext.WriteLine(response.Response.Data.ProcessUid);
+        Assert.IsNotNull(response);
     }
 }

@@ -1,31 +1,34 @@
-﻿using Apps.Smartling.Actions;
+﻿using Tests.Smartling.Base;
+using Apps.Smartling.Actions;
+using Apps.Smartling.Constants;
+using Apps.Smartling.Models.Identifiers;
 using Apps.Smartling.Models.Requests.Files;
-using SmartlingTests.Base;
+using Blackbird.Applications.Sdk.Common.Invocation;
 
-namespace Tests.Smartling
+namespace Tests.Smartling;
+
+[TestClass]
+public class FileTests : TestBaseMultipleConnections
 {
-    [TestClass]
-    public class FileTests : TestBase
+    [TestMethod, ContextDataSource(ConnectionTypes.AccountWide)]
+    public async Task SearchFileTest_IsSuccess(InvocationContext context)
     {
-        [TestMethod]
-        public async Task SearchFileTest_IsSuccess()
+        // Arrange
+        var action = new FileActions(context, FileManager);
+        var project = new ProjectIdentifier { ProjectId = "2dbb9dabf" };
+        var input = new SearchFilesRequest
         {
-            var action = new FileActions(InvocationContext, FileManager);
+            //UploadedAfter = DateTime.UtcNow.AddDays(-1),
+            //UploadedBefore = DateTime.UtcNow.AddDays(-1),
+            //FileTypes = ["json"],
+            //FileUriContains = "/fireboarding"
+        };
 
-            var input = new SearchFilesRequest
-            {
-                //UploadedAfter = DateTime.UtcNow.AddDays(-1),
-                //UploadedBefore = DateTime.UtcNow.AddDays(-1),
-                //FileTypes = ["json"],
-                //FileUriContains = "/fireboarding"
-            };
+        // Act
+        var response = await action.SearchFiles(project, input);
 
-            var response = await action.SearchFiles(input);
-
-            var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
-            Console.WriteLine(json);
-
-            Assert.IsNotNull(response);
-        }
+        // Assert
+        PrintResult(response);
+        Assert.IsNotNull(response);
     }
 }

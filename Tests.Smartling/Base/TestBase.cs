@@ -10,8 +10,6 @@ public class TestBase
 
     public List<InvocationContext> InvocationContexts { get; set; }
 
-    public InvocationContext InvocationContext { get; set; }
-
     public FileManager FileManager { get; set; }
 
     public TestContext? TestContext { get; set; }
