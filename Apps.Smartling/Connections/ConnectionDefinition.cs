@@ -11,7 +11,7 @@ public class ConnectionDefinition : IConnectionDefinition
         new()
         {
             Name = ConnectionTypes.ProjectWide,
-            DisplayName = "Project-wide connection",
+            DisplayName = "Project-wide",
             AuthenticationType = ConnectionAuthenticationType.Undefined,
             ConnectionUsage = ConnectionUsage.Actions,
             ConnectionProperties = new List<ConnectionProperty>
@@ -24,7 +24,7 @@ public class ConnectionDefinition : IConnectionDefinition
         new()
         {
             Name = ConnectionTypes.AccountWide,
-            DisplayName = "Account-wide connection",
+            DisplayName = "Account-wide",
             AuthenticationType = ConnectionAuthenticationType.Undefined,
             ConnectionProperties = new List<ConnectionProperty>
             {
