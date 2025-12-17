@@ -11,6 +11,7 @@ public class ConnectionDefinition : IConnectionDefinition
         new()
         {
             Name = ConnectionTypes.ProjectWide,
+            DisplayName = "Project-wide connection",
             AuthenticationType = ConnectionAuthenticationType.Undefined,
             ConnectionUsage = ConnectionUsage.Actions,
             ConnectionProperties = new List<ConnectionProperty>
@@ -23,7 +24,7 @@ public class ConnectionDefinition : IConnectionDefinition
         new()
         {
             Name = ConnectionTypes.AccountWide,
-            DisplayName = "API key (account-wide)",
+            DisplayName = "Account-wide connection",
             AuthenticationType = ConnectionAuthenticationType.Undefined,
             ConnectionProperties = new List<ConnectionProperty>
             {
