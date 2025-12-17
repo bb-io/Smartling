@@ -69,4 +69,18 @@ public class DataSources : TestBaseMultipleConnections
         PrintDataHandlerResult(response);
         Assert.IsNotNull(response);
     }
+
+    [TestMethod, ContextDataSource(ConnectionTypes.ProjectWide)]
+    public async Task ProjectDataSourceHandlerReturnsValues(InvocationContext context)
+    {
+        // Arrange
+        var handler = new ProjectDataSourceHandler(context);
+
+        // Act
+        var result = await handler.GetDataAsync(new DataSourceContext { SearchString = "" }, CancellationToken.None);
+
+        // Assert
+        PrintDataHandlerResult(result);
+        Assert.IsNotNull(result);
+    }
 }

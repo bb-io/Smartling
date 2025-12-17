@@ -31,7 +31,8 @@ public class SmartlingInvocable : BaseInvocable
             case ConnectionTypes.AccountWide:
                 return Credentials.Get(CredsNames.AccountUid).Value;
             case ConnectionTypes.ProjectWide:
-                var request = new SmartlingRequest($"/projects-api/v2/projects/{GetProjectId()}", Method.Get);
+                string projectId = await GetProjectId();
+                var request = new SmartlingRequest($"/projects-api/v2/projects/{projectId}", Method.Get);
                 var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ProjectDtoWithTargetLocales>>(request);
                 return response.Response.Data.AccountUid;
             default:
