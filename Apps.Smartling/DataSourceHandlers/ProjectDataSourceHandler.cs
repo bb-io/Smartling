@@ -12,7 +12,8 @@ public class ProjectDataSourceHandler(InvocationContext context) : SmartlingInvo
 {
     public async Task<IEnumerable<DataSourceItem>> GetDataAsync(DataSourceContext context, CancellationToken ct)
     {
-        var request = new SmartlingRequest($"/accounts-api/v2/accounts/{GetAccountUid()}/projects", Method.Get);
+        string accountUid = await GetAccountUid();
+        var request = new SmartlingRequest($"/accounts-api/v2/accounts/{accountUid}/projects", Method.Get);
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<ProjectDto>>>(request);
         return response.Response.Data.Items.Select(x => new DataSourceItem(x.ProjectId, x.ProjectName));
     }
