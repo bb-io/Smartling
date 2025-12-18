@@ -1,26 +1,30 @@
-﻿using Apps.Smartling.Actions;
-using SmartlingTests.Base;
+﻿using Tests.Smartling.Base;
+using Apps.Smartling.Actions;
+using Apps.Smartling.Models.Identifiers;
+using Apps.Smartling.Models.Requests.Tags;
+using Blackbird.Applications.Sdk.Common.Invocation;
 
-namespace Tests.Smartling
+namespace Tests.Smartling;
+
+[TestClass]
+public class TagTests : TestBaseMultipleConnections
 {
-    [TestClass]
-    public class TagTests : TestBase
+    [TestMethod, ContextDataSource]
+    public async Task AddTagsToStrings_IsSuccess(InvocationContext context)
     {
-        [TestMethod]
-        public async Task AddTagsToStrings_WorksAsExpected()
+        // Arrange
+        var project = new ProjectIdentifier { ProjectId = "2dbb9dabf" };
+        var action = new TagActions(context);
+        var strings = new StringHashcodesIdentifier
         {
-           var action = new TagActions(InvocationContext);
-            var strings = new Apps.Smartling.Models.Identifiers.StringHashcodesIdentifier
-            {
-                Hashcodes = new List<string> { "b226f88857ecc2003e840999237fe23f" }
-            };
-            var input = new Apps.Smartling.Models.Requests.Tags.AddTagsRequest
-            {
-                Tags = new List<string> { "BB Test tag 2" }
-            };
-            await action.AddTagsToStrings(strings, input);
+            Hashcodes = new List<string> { "b226f88857ecc2003e840999237fe23f" }
+        };
+        var input = new AddTagsRequest
+        {
+            Tags = new List<string> { "BB Test tag 2" }
+        };
 
-            Assert.IsTrue(true);
-        }
+        // Act
+        await action.AddTagsToStrings(project, strings, input);
     }
 }

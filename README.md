@@ -14,17 +14,29 @@ Before you can connect you need to make sure that:
 
 - You have a Smartling account with [Account Owner](https://help.smartling.com/hc/en-us/articles/360056193134#h_01F5GM4FJ4Y57MYKZM0YDSM06Q) or [Project Manager](https://help.smartling.com/hc/en-us/articles/360056193134#h_01F5GM4MXQS34S0J9R10A5CNJP) permissions.
 - You created a project (if you have Account Owner permissions) or the project was created for you (if you have Project Manager permissions).
-- You obtained API credentials for the project. Follow [the steps to generate API v2 tokens](https://help.smartling.com/hc/en-us/articles/115004187694-API-Tokens-). After this, note **Project ID**, **User Identifier** and **User Secret** values, as they will be used to create a connection to Smartling via Blackbird.
+- You obtained API credentials for the project. Follow [the steps to generate API v2 tokens](https://help.smartling.com/hc/en-us/articles/115004187694-API-Tokens-). After this, note the **Project ID** (or **Account UID**, depending on your desired connection type), **User Identifier** and **User Secret** values, as they will be used to create a connection to Smartling via Blackbird.
 
 ## Connecting
 
-1. Navigate to apps and search for Smartling. If you cannot find Smartling then click _Add App_ in the top right corner, select Smartling and add the app to your Blackbird environment.
-2. Click _Add Connection_.
-3. Name your connection for future reference e.g. 'My localization project'.
-4. Fill in the **Project ID**, **User identifier** and **User secret** of your Smartling instance you want to connect to.
-5. Click _Connect_.
+Navigate to apps and search for Smartling. If you cannot find Smartling then click _Add App_ in the top right corner, select Smartling and add the app to your Blackbird environment. Click _Add Connection_ and name your connection for future reference e.g. 'My localization project'.
 
-![Connecting](image/README/connecting.png)
+### Project-wide connection
+
+1. Select the **Project-wide** connection type.
+2. Fill in the **Project ID**, **User identifier** and **User secret** of your Smartling instance you want to connect to.
+3. Click _Connect_.
+
+![Connecting](image/README/project_connection.png)
+
+### Account-wide connection
+
+1. Select the **Account-wide** connection type.
+2. Fill in the **Account UID**, **User identifier** and **User secret** of your Smartling instance you want to connect to.
+3. Click _Connect_.
+
+![Connecting](image/README/account_connection.png)
+
+**Note**: This connection type is designed to work with multiple projects. Therefore, it requires you to specify the project ID value manually.
 
 ## Actions
 

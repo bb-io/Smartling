@@ -1,51 +1,54 @@
-﻿using Apps.Smartling.Polling;
-using Apps.Smartling.Polling.Models;
-using Blackbird.Applications.Sdk.Common.Polling;
-using SmartlingTests.Base;
-using System;
-using System.Collections.Generic;
+﻿using Tests.Smartling.Base;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Apps.Smartling.Polling;
+using Apps.Smartling.Polling.Models;
+using Apps.Smartling.Constants;
+using Apps.Smartling.Models.Identifiers;
+using Blackbird.Applications.Sdk.Common.Polling;
+using Blackbird.Applications.Sdk.Common.Invocation;
 
-namespace Tests.Smartling
+namespace Tests.Smartling;
+
+[TestClass]
+public class PollingTests : TestBaseMultipleConnections
 {
-    [TestClass]
-    public class PollingTests : TestBase
+    [TestMethod, ContextDataSource(ConnectionTypes.ProjectWide)]
+    public async Task OnJobCompleted(InvocationContext context)
     {
-        [TestMethod]
-        public async Task OnJobCompleted()
+        // Arrange
+        var project = new ProjectIdentifier { ProjectId = "2dbb9dabf" };
+        var action = new PollingList(context);
+        var customDate = DateTime.ParseExact("Mar 27, 2025, 6:31 PM", "MMM dd, yyyy, h:mm tt", CultureInfo.InvariantCulture);
+        var request = new PollingEventRequest<DateMemory>
         {
-            var customDate = DateTime.ParseExact("Mar 27, 2025, 6:31 PM", "MMM dd, yyyy, h:mm tt", CultureInfo.InvariantCulture);
+            Memory = new DateMemory { LastInteractionDate = customDate }
+        };
 
-            var action = new PollingList(InvocationContext);
-            var request = new PollingEventRequest<DateMemory>
-            {
-                Memory = new DateMemory { LastInteractionDate = customDate }
-            };
+        // Act
+        var response = await action.OnJobsCompleted(request, project);
 
-            var response = await action.OnJobsCompleted(request);
-            Console.WriteLine($"Request memory: {request.Memory?.LastInteractionDate}");
-            Console.WriteLine($"Response memory: {response.Memory?.LastInteractionDate}");
-            Assert.IsNotNull(response);
-        }
+        // Assert
+        PrintResult(response);
+        Assert.IsNotNull(response);
+    }
 
-        [TestMethod]
-        public async Task OnJobAuthorized()
+    [TestMethod, ContextDataSource]
+    public async Task OnJobAuthorized(InvocationContext context)
+    {
+        // Arrange
+        var project = new ProjectIdentifier { ProjectId = "2dbb9dabf" };
+        var customDate = DateTime.UtcNow.AddDays(-1);
+        var action = new PollingList(context);
+        var request = new PollingEventRequest<DateMemory>
         {
-            var customDate = DateTime.UtcNow.AddDays(-1);
+            Memory = new DateMemory { LastInteractionDate = customDate }
+        };
 
-            var action = new PollingList(InvocationContext);
-            var request = new PollingEventRequest<DateMemory>
-            {
-                Memory = new DateMemory { LastInteractionDate = customDate }
-            };
+        // Act
+        var response = await action.OnJobsCompleted(request, project);
 
-            var response = await action.OnJobsCompleted(request);
-            var json = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
-            Console.WriteLine(json);
-            Assert.IsNotNull(response);
-        }
+        // Assert
+        PrintResult(response);
+        Assert.IsNotNull(response);
     }
 }

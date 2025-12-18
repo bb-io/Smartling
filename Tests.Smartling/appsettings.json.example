@@ -1,8 +1,17 @@
 {
-    "ConnectionDefinition": {
-        "projectId": "",
-        "userIdentifier": "",
-        "userSecret": ""
+  "ConnectionDefinition": [
+    {
+      "connectionType": "API key", // project-wide
+      "projectId": "",
+      "userIdentifier": "",
+      "userSecret": ""
     },
-    "TestFolder": "TestFiles"
+    {
+      "connectionType": "Account-wide",
+      "userIdentifier": "",
+      "userSecret": "",
+      "accountUid": ""
+    }
+  ],
+  "TestFolder": "TestFiles"
 }

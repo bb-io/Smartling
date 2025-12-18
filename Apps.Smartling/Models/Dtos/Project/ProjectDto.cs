@@ -1,6 +1,4 @@
-﻿using Apps.Smartling.Models.Dtos.Locales;
-
-namespace Apps.Smartling.Models.Dtos;
+﻿namespace Apps.Smartling.Models.Dtos.Project;
 
 public class ProjectDto
 {
@@ -10,5 +8,4 @@ public class ProjectDto
     public bool Archived { get; set; }
     public string SourceLocaleId { get; set; }
     public string SourceLocaleDescription { get; set; }
-    public IEnumerable<TargetLocaleDto> TargetLocales { get; set; }
 }

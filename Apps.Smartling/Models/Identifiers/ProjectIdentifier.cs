@@ -1,6 +1,12 @@
-﻿namespace Apps.Smartling.Models.Identifiers;
+﻿using Apps.Smartling.DataSourceHandlers;
+using Blackbird.Applications.Sdk.Common;
+using Blackbird.Applications.Sdk.Common.Dynamic;
+
+namespace Apps.Smartling.Models.Identifiers;
 
 public class ProjectIdentifier
 {
-    public string ProjectId { get; set; }
+    [Display("Project ID")]
+    [DataSource(typeof(ProjectDataSourceHandler))]
+    public string? ProjectId { get; set; }
 }

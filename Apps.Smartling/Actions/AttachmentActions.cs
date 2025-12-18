@@ -27,11 +27,14 @@ public class AttachmentActions : SmartlingInvocable
     }
 
     [Action("List files attached to job", Description = "Retrieve a list of files attached to a job.")]
-    public async Task<ListAttachmentsResponse> ListFilesAttachedToJob([ActionParameter] JobIdentifier jobIdentifier)
+    public async Task<ListAttachmentsResponse> ListFilesAttachedToJob(
+        [ActionParameter] JobIdentifier jobIdentifier,
+        [ActionParameter] ProjectIdentifier projectIdentifier)
     {
-        var getAttachmentsRequest = 
-            new SmartlingRequest($"/attachments-api/v2/accounts/{_accountUid}/jobs/{jobIdentifier.TranslationJobUid}", 
-                Method.Get);
+        var getAttachmentsRequest = new SmartlingRequest(
+            $"/attachments-api/v2/accounts/{_accountUid}/jobs/{jobIdentifier.TranslationJobUid}", 
+            Method.Get
+        );
         var getAttachmentsResponse =
             await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<AttachmentDto>>>(getAttachmentsRequest);
         var attachments = getAttachmentsResponse.Response.Data.Items;
@@ -39,8 +42,11 @@ public class AttachmentActions : SmartlingInvocable
     }
 
     [Action("Upload attachment to job", Description = "Upload attachment file to a job.")]
-    public async Task<AttachmentDto> AddAttachmentToJob([ActionParameter] JobIdentifier jobIdentifier, 
-        [ActionParameter] FileWrapper file, [ActionParameter] [Display("Attachment description")] string? description)
+    public async Task<AttachmentDto> AddAttachmentToJob(
+        [ActionParameter] JobIdentifier jobIdentifier,
+        [ActionParameter] ProjectIdentifier projectIdentifier,
+        [ActionParameter] FileWrapper file, 
+        [ActionParameter] [Display("Attachment description")] string? description)
     {
         var request = new SmartlingRequest($"/attachments-api/v2/accounts/{_accountUid}/jobs/attachments", Method.Post);
 
@@ -58,13 +64,15 @@ public class AttachmentActions : SmartlingInvocable
     }
 
     [Action("Download file attached to job", Description = "Download file attached to a job.")]
-    public async Task<FileWrapper> DownloadJobAttachment([ActionParameter] JobIdentifier jobIdentifier, 
+    public async Task<FileWrapper> DownloadJobAttachment(
+        [ActionParameter] JobIdentifier jobIdentifier,
+        [ActionParameter] ProjectIdentifier projectIdentifier,
         [ActionParameter] JobAttachmentIdentifier jobAttachmentIdentifier)
     {
-        var request =
-            new SmartlingRequest(
-                $"/attachments-api/v2/accounts/{_accountUid}/jobs/attachments/{jobAttachmentIdentifier.AttachmentUid}",
-                Method.Get);
+        var request = new SmartlingRequest(
+            $"/attachments-api/v2/accounts/{_accountUid}/jobs/attachments/{jobAttachmentIdentifier.AttachmentUid}",
+            Method.Get
+        );
         var response = await Client.ExecuteWithErrorHandling(request);
         
         var filename = response.ContentHeaders.First(header => header.Name == "Content-Disposition").Value.ToString()

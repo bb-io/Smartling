@@ -10,6 +10,7 @@ using Blackbird.Applications.Sdk.Utils.Extensions.Files;
 using Apps.Smartling.Models.Dtos.Contexts;
 using Blackbird.Applications.Sdk.Common.Files;
 using Apps.Smartling.Models.Responses.Context;
+using Apps.Smartling.Models.Identifiers;
 
 namespace Apps.Smartling.Actions;
 
@@ -18,11 +19,14 @@ public class ContextActions(InvocationContext invocationContext, IFileManagement
     : SmartlingInvocable(invocationContext)
 {
     [Action("Add project context", Description = "Add project context")]
-    public async Task AddProjectContext([ActionParameter] AddProjectContextRequest addProjectContext)
+    public async Task AddProjectContext(
+        [ActionParameter] ProjectIdentifier project,
+        [ActionParameter] AddProjectContextRequest addProjectContext)
     {
-        var uploadProjectContextRequest = new SmartlingRequest($"/context-api/v2/projects/{ProjectId}/contexts", Method.Post);
+        string projectId = await GetProjectId(project.ProjectId);
+        var uploadProjectContextRequest = new SmartlingRequest($"/context-api/v2/projects/{projectId}/contexts", Method.Post);
         uploadProjectContextRequest.AlwaysMultipartFormData = true;
-        if(!string.IsNullOrEmpty(addProjectContext.Name))
+        if (!string.IsNullOrEmpty(addProjectContext.Name))
             uploadProjectContextRequest.AddParameter("name", addProjectContext.Name);
 
         await using var contextFileStream = await fileManagementClient.DownloadAsync(addProjectContext.ContextFile);
@@ -30,18 +34,22 @@ public class ContextActions(InvocationContext invocationContext, IFileManagement
         var uploadProjectContextResponse =
             await Client.ExecuteWithErrorHandling<ResponseWrapper<ProjectContextDto>>(uploadProjectContextRequest);
         
-        if(addProjectContext.ContextMatching.HasValue && addProjectContext.ContextMatching.Value)
+        if (addProjectContext.ContextMatching.HasValue && addProjectContext.ContextMatching.Value)
         {
-            var runContextMatchingRequest = new SmartlingRequest($"/context-api/v2/projects/{ProjectId}/contexts/{uploadProjectContextResponse.Response.Data.ContextUid}/match/async", Method.Post);
+            var runContextMatchingRequest = new SmartlingRequest($"/context-api/v2/projects/{projectId}/contexts/{uploadProjectContextResponse.Response.Data.ContextUid}/match/async", Method.Post);
             runContextMatchingRequest.AddJsonBody(new {});
-            await Client.ExecuteAsyncProcessWithHandling(runContextMatchingRequest, ProjectId);
+            await Client.ExecuteAsyncProcessWithHandling(runContextMatchingRequest, projectId);
         }
     }
 
     [Action("Search project context", Description = "Search project context")]
-    public async Task<List<ProjectContextDto>> SearchProjectContext([ActionParameter] SearchProjectContextRequest searchProjectContext)
+    public async Task<List<ProjectContextDto>> SearchProjectContext(
+        [ActionParameter] ProjectIdentifier project,
+        [ActionParameter] SearchProjectContextRequest searchProjectContext)
     {
-        var searchProjectContextRequest = new SmartlingRequest($"/context-api/v2/projects/{ProjectId}/contexts", Method.Get);
+        string projectId = await GetProjectId(project.ProjectId);
+
+        var searchProjectContextRequest = new SmartlingRequest($"/context-api/v2/projects/{projectId}/contexts", Method.Get);
         if (!string.IsNullOrEmpty(searchProjectContext.Name))
             searchProjectContextRequest.AddQueryParameter("nameFilter", searchProjectContext.Name);
         if (!string.IsNullOrEmpty(searchProjectContext.Type))
@@ -53,14 +61,18 @@ public class ContextActions(InvocationContext invocationContext, IFileManagement
     }
 
     [Action("Download project context", Description = "Download project context")]
-    public async Task<FileReference> DownloadProjectContext([ActionParameter] GetProjectContextRequest getProjectContext)
+    public async Task<FileReference> DownloadProjectContext(
+        [ActionParameter] ProjectIdentifier project,
+        [ActionParameter] GetProjectContextRequest getProjectContext)
     {
-        var downloadProjectContextRequest = new SmartlingRequest($"/context-api/v2/projects/{ProjectId}/contexts/{getProjectContext.ContextUid}/content", Method.Get);
+        string projectId = await GetProjectId(project.ProjectId);
+
+        var downloadProjectContextRequest = new SmartlingRequest($"/context-api/v2/projects/{projectId}/contexts/{getProjectContext.ContextUid}/content", Method.Get);
         
         var downloadProjectContextResponse = await Client.ExecuteAsync(downloadProjectContextRequest);
         using var contextStream = new MemoryStream(downloadProjectContextResponse.RawBytes); 
         
-        var getProjectContextRequest = new SmartlingRequest($"/context-api/v2/projects/{ProjectId}/contexts/{getProjectContext.ContextUid}", Method.Get);
+        var getProjectContextRequest = new SmartlingRequest($"/context-api/v2/projects/{projectId}/contexts/{getProjectContext.ContextUid}", Method.Get);
         var getProjectContextResponse = await Client.ExecuteWithErrorHandling<ResponseWrapper<ProjectContextDto>>(getProjectContextRequest);
 
         var projectContextFileReference =
@@ -69,20 +81,26 @@ public class ContextActions(InvocationContext invocationContext, IFileManagement
     }
 
     [Action("Delete project context", Description = "Delete project context")]
-    public async Task DeleteProjectContext([ActionParameter] GetProjectContextRequest getProjectContext)
+    public async Task DeleteProjectContext(
+        [ActionParameter] ProjectIdentifier project, 
+        [ActionParameter] GetProjectContextRequest getProjectContext)
     {
-        var deleteProjectContextRequest = new SmartlingRequest($"/context-api/v2/projects/{ProjectId}/contexts/{getProjectContext.ContextUid}", Method.Delete);
+        string projectId = await GetProjectId(project.ProjectId);
+
+        var deleteProjectContextRequest = new SmartlingRequest($"/context-api/v2/projects/{projectId}/contexts/{getProjectContext.ContextUid}", Method.Delete);
         await Client.ExecuteWithErrorHandling(deleteProjectContextRequest);
     }
 
-
     [Action("Upload new context", Description = "Upload new context (with optional automatic matching)")]
     public async Task<ResponseWrapper<UploadContextResponseDto>> UploadNewContext(
+        [ActionParameter] ProjectIdentifier project,
         [ActionParameter] AddProjectContextRequest request)
     {
+        string projectId = await GetProjectId(project.ProjectId);
+
         var endpoint = request.ContextMatching == true
-            ? $"/context-api/v2/projects/{ProjectId}/contexts/upload-and-match-async"
-            : $"/context-api/v2/projects/{ProjectId}/contexts";
+            ? $"/context-api/v2/projects/{projectId}/contexts/upload-and-match-async"
+            : $"/context-api/v2/projects/{projectId}/contexts";
 
         var uploadRequest = new SmartlingRequest(endpoint, Method.Post)
         {
@@ -129,9 +147,12 @@ public class ContextActions(InvocationContext invocationContext, IFileManagement
 
     [Action("Link context to string", Description = "Link context to string")]
     public async Task<ResponseWrapper<LinkContextResponseDto>> LinkContextToString(
-            [ActionParameter] SimpleLinkContextRequest request)
+        [ActionParameter] ProjectIdentifier project,
+        [ActionParameter] SimpleLinkContextRequest request)
     {
-        var apiRequest = new SmartlingRequest($"/context-api/v2/projects/{ProjectId}/bindings", Method.Post);
+        string projectId = await GetProjectId(project.ProjectId);
+
+        var apiRequest = new SmartlingRequest($"/context-api/v2/projects/{projectId}/bindings", Method.Post);
 
         var body = new
         {
@@ -150,7 +171,4 @@ public class ContextActions(InvocationContext invocationContext, IFileManagement
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<LinkContextResponseDto>>(apiRequest);
         return response;
     }
-
-
 }
-

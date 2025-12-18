@@ -19,10 +19,16 @@ public class IssueActions(InvocationContext invocationContext) : SmartlingInvoca
     #region Get
 
     [Action("Get issue", Description = "Retrieve detailed information about a single issue.")]
-    public async Task<IssueDto> GetIssue([ActionParameter] IssueIdentifier issueIdentifier)
+    public async Task<IssueDto> GetIssue(
+        [ActionParameter] ProjectIdentifier project, 
+        [ActionParameter] IssueIdentifier issueIdentifier)
     {
-        var request = new SmartlingRequest($"/issues-api/v2/projects/{ProjectId}/issues/{issueIdentifier.IssueUid}", 
-            Method.Get);
+        string projectId = await GetProjectId(project.ProjectId);
+
+        var request = new SmartlingRequest(
+            $"/issues-api/v2/projects/{projectId}/issues/{issueIdentifier.IssueUid}", 
+            Method.Get
+        );
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<IssueDto>>(request);
         var issue = response.Response.Data;
         return issue;
@@ -30,9 +36,12 @@ public class IssueActions(InvocationContext invocationContext) : SmartlingInvoca
 
     [Action("Search issues", Description = "List issues that match the specified filter options. If no parameters are " +
                                            "specified, all issues will be returned.")]
-    public async Task<SearchIssuesResponse> SearchIssues([ActionParameter] SearchIssuesRequest input)
+    public async Task<SearchIssuesResponse> SearchIssues(
+        [ActionParameter] ProjectIdentifier project, 
+        [ActionParameter] SearchIssuesRequest input)
     {
-        var request = new SmartlingRequest($"/issues-api/v2/projects/{ProjectId}/issues/list", Method.Post);
+        string projectId = await GetProjectId(project.ProjectId);
+        var request = new SmartlingRequest($"/issues-api/v2/projects/{projectId}/issues/list", Method.Post);
         request.AddJsonBody(new
         {
             createdDateBefore = input.CreatedDateBefore,
@@ -65,14 +74,18 @@ public class IssueActions(InvocationContext invocationContext) : SmartlingInvoca
     #region Post
 
     [Action("Create issue", Description = "Create a new issue for a string.")]
-    public async Task<IssueDto> CreateIssue([ActionParameter] StringIdentifier stringIdentifier, 
-        [ActionParameter] TargetLocaleOptionalIdentifier targetLocale, [ActionParameter] CreateIssueRequest input, 
+    public async Task<IssueDto> CreateIssue(
+        [ActionParameter] ProjectIdentifier project, 
+        [ActionParameter] StringIdentifier stringIdentifier, 
+        [ActionParameter] TargetLocaleOptionalIdentifier targetLocale, 
+        [ActionParameter] CreateIssueRequest input, 
         [ActionParameter] AssigneeIdentifier assigneeIdentifier)
     {
         if (input.IssueTypeCode == "TRANSLATION" && targetLocale.TargetLocaleId == null)
             throw new PluginMisconfigurationException("Target locale is required for translation issue.");
-        
-        var request = new SmartlingRequest($"/issues-api/v2/projects/{ProjectId}/issues", Method.Post);
+
+        string projectId = await GetProjectId(project.ProjectId);
+        var request = new SmartlingRequest($"/issues-api/v2/projects/{projectId}/issues", Method.Post);
         request.AddJsonBody(new
         {
             issueText = input.IssueText,
@@ -97,10 +110,14 @@ public class IssueActions(InvocationContext invocationContext) : SmartlingInvoca
     #region Put
 
     [Action("Edit issue", Description = "Edit the issue. Specify only fields that need to be updated.")]
-    public async Task<IssueIdentifier> EditIssue([ActionParameter] IssueIdentifier issueIdentifier, 
-        [ActionParameter] EditIssueRequest input, [ActionParameter] TargetLocaleOptionalIdentifier targetLocale,
+    public async Task<IssueIdentifier> EditIssue(
+        [ActionParameter] ProjectIdentifier project, 
+        [ActionParameter] IssueIdentifier issueIdentifier, 
+        [ActionParameter] EditIssueRequest input, 
+        [ActionParameter] TargetLocaleOptionalIdentifier targetLocale,
         [ActionParameter] AssigneeIdentifier assigneeIdentifier)
     {
+        string projectId = await GetProjectId(project.ProjectId);
         if (input.IssueTypeCode != null)
         {
             if (input.IssueSubTypeCode == null)
@@ -111,7 +128,7 @@ public class IssueActions(InvocationContext invocationContext) : SmartlingInvoca
 
             var request =
                 new SmartlingRequest(
-                    $"/issues-api/v2/projects/{ProjectId}/issues/{issueIdentifier.IssueUid}/change-type", Method.Put);
+                    $"/issues-api/v2/projects/{projectId}/issues/{issueIdentifier.IssueUid}/change-type", Method.Put);
 
             if (targetLocale.TargetLocaleId != null)
                 request.AddJsonBody(new
@@ -133,7 +150,7 @@ public class IssueActions(InvocationContext invocationContext) : SmartlingInvoca
         if (input.IssueText != null)
         {
             var request =
-                new SmartlingRequest($"/issues-api/v2/projects/{ProjectId}/issues/{issueIdentifier.IssueUid}/issueText",
+                new SmartlingRequest($"/issues-api/v2/projects/{projectId}/issues/{issueIdentifier.IssueUid}/issueText",
                     Method.Put);
             request.AddJsonBody(new { issueText = input.IssueText });
             await Client.ExecuteWithErrorHandling(request);
@@ -143,7 +160,7 @@ public class IssueActions(InvocationContext invocationContext) : SmartlingInvoca
         {
             var request =
                 new SmartlingRequest(
-                    $"/issues-api/v2/projects/{ProjectId}/issues/{issueIdentifier.IssueUid}/severity-level",
+                    $"/issues-api/v2/projects/{projectId}/issues/{issueIdentifier.IssueUid}/severity-level",
                     Method.Put);
             request.AddJsonBody(new { issueSeverityLevelCode = input.IssueSeverityLevelCode });
             await Client.ExecuteWithErrorHandling(request);
@@ -152,7 +169,7 @@ public class IssueActions(InvocationContext invocationContext) : SmartlingInvoca
         if (input.Answered != null)
         {
             var request =
-                new SmartlingRequest($"/issues-api/v2/projects/{ProjectId}/issues/{issueIdentifier.IssueUid}/answered",
+                new SmartlingRequest($"/issues-api/v2/projects/{projectId}/issues/{issueIdentifier.IssueUid}/answered",
                     Method.Put);
             request.AddJsonBody(new { answered = input.Answered });
             await Client.ExecuteWithErrorHandling(request);
@@ -163,14 +180,14 @@ public class IssueActions(InvocationContext invocationContext) : SmartlingInvoca
             if (assigneeIdentifier.AssigneeUserUid == "-1")
             {
                 var request =
-                    new SmartlingRequest($"/issues-api/v2/projects/{ProjectId}/issues/{issueIdentifier.IssueUid}/assignee",
+                    new SmartlingRequest($"/issues-api/v2/projects/{projectId}/issues/{issueIdentifier.IssueUid}/assignee",
                         Method.Delete);
                 await Client.ExecuteWithErrorHandling(request);
             }
             else
             {
                 var request =
-                    new SmartlingRequest($"/issues-api/v2/projects/{ProjectId}/issues/{issueIdentifier.IssueUid}/assignee",
+                    new SmartlingRequest($"/issues-api/v2/projects/{projectId}/issues/{issueIdentifier.IssueUid}/assignee",
                         Method.Put);
                 request.AddJsonBody(new
                 {
@@ -184,22 +201,30 @@ public class IssueActions(InvocationContext invocationContext) : SmartlingInvoca
     }
 
     [Action("Open issue", Description = "Set the state of an issue to 'opened'.")]
-    public async Task<IssueIdentifier> OpenIssue([ActionParameter] IssueIdentifier issueIdentifier)
+    public async Task<IssueIdentifier> OpenIssue(
+        [ActionParameter] ProjectIdentifier project, 
+        [ActionParameter] IssueIdentifier issueIdentifier)
     {
-        var request =
-            new SmartlingRequest($"/issues-api/v2/projects/{ProjectId}/issues/{issueIdentifier.IssueUid}/state",
-                Method.Put);
+        string projectId = await GetProjectId(project.ProjectId);
+        var request = new SmartlingRequest(
+            $"/issues-api/v2/projects/{projectId}/issues/{issueIdentifier.IssueUid}/state",
+            Method.Put
+        );
         request.AddJsonBody(new { issueStateCode = "OPENED" });
         await Client.ExecuteWithErrorHandling(request);
         return issueIdentifier;
     }
     
     [Action("Close issue", Description = "Set the state of an issue to 'resolved'.")]
-    public async Task<IssueIdentifier> CloseIssue([ActionParameter] IssueIdentifier issueIdentifier)
+    public async Task<IssueIdentifier> CloseIssue(
+        [ActionParameter] ProjectIdentifier project, 
+        [ActionParameter] IssueIdentifier issueIdentifier)
     {
-        var request =
-            new SmartlingRequest($"/issues-api/v2/projects/{ProjectId}/issues/{issueIdentifier.IssueUid}/state",
-                Method.Put);
+        string projectId = await GetProjectId(project.ProjectId);
+        var request = new SmartlingRequest(
+            $"/issues-api/v2/projects/{projectId}/issues/{issueIdentifier.IssueUid}/state",
+            Method.Put
+        );
         request.AddJsonBody(new { issueStateCode = "RESOLVED" });
         await Client.ExecuteWithErrorHandling(request);
         return issueIdentifier;

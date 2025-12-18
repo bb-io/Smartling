@@ -1,28 +1,31 @@
-﻿using Apps.Smartling.Api;
+﻿using RestSharp;
+using Apps.Smartling.Api;
 using Apps.Smartling.Models.Dtos;
 using Apps.Smartling.Models.Dtos.Jobs;
 using Apps.Smartling.Models.Responses;
+using Apps.Smartling.Models.Identifiers;
+using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Dynamic;
 using Blackbird.Applications.Sdk.Common.Invocation;
-using RestSharp;
 
 namespace Apps.Smartling.DataSourceHandlers;
 
-public class JobDataSourceHandler(InvocationContext invocationContext)
-    : SmartlingInvocable(invocationContext), IAsyncDataSourceHandler
+public class JobDataSourceHandler(
+    InvocationContext invocationContext,
+    [ActionParameter] ProjectIdentifier project)
+    : SmartlingInvocable(invocationContext), IAsyncDataSourceItemHandler
 {
-    public async Task<Dictionary<string, string>> GetDataAsync(DataSourceContext context,
-        CancellationToken cancellationToken)
+    public async Task<IEnumerable<DataSourceItem>> GetDataAsync(DataSourceContext context, CancellationToken ct)
     {
+        string projectId = await GetProjectId(project.ProjectId);
         var limit = 100;
         var offset = 0;
-        var jobs = new Dictionary<string, string>();
+        var jobs = new List<DataSourceItem>(); 
+        var addedIds = new HashSet<string>();
 
-        var baseUrl = $"/jobs-api/v3/projects/{ProjectId}/jobs?sortBy=createdDate&sortDirection=DESC";
+        var baseUrl = $"/jobs-api/v3/projects/{projectId}/jobs?sortBy=createdDate&sortDirection=DESC";
         if (!string.IsNullOrEmpty(context.SearchString))
-        {
             baseUrl += $"&jobName={Uri.EscapeDataString(context.SearchString)}";
-        }
 
         while (true)
         {
@@ -34,16 +37,15 @@ public class JobDataSourceHandler(InvocationContext invocationContext)
 
             foreach (var job in items)
             {
-                if (!jobs.ContainsKey(job.TranslationJobUid))
+                if (addedIds.Add(job.TranslationJobUid))
                 {
-                    jobs.Add(job.TranslationJobUid, job.JobName);
+                    var newJob = new DataSourceItem(job.TranslationJobUid, job.JobName);
+                    jobs.Add(newJob);
                 }
             }
 
             if (items.Count < limit)
-            {
                 break;
-            }
 
             offset += limit;
         }
