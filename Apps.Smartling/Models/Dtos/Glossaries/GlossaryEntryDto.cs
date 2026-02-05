@@ -10,7 +10,7 @@ public class GlossaryEntryDto
     [Display("Glossary ID")]
     public string GlossaryUid { get; set; }
     
-    public string Definition { get; set; }
+    public string? Definition { get; set; }
     
     [Display("Part of speech")]
     public string? PartOfSpeech { get; set; }
@@ -26,10 +26,10 @@ public class GlossaryEntryDto
     public bool Archived { get; set; }
     
     [Display("Created by user")]
-    public string CreatedByUserUid { get; set; }
+    public string? CreatedByUserUid { get; set; }
     
     [Display("Modified by user")]
-    public string ModifiedByUserUid { get; set; }
+    public string? ModifiedByUserUid { get; set; }
     
     [Display("Date of creation")]
     public DateTime CreatedDate { get; set; }
