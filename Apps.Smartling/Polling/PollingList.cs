@@ -276,14 +276,14 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
     [PollingEvent("On glossary entries added [Polling]")]
     public async Task<PollingEventResponse<GlossaryEntriesMemory, List<GlossaryEntryDto>>> OnGlossaryEntriesAdded(
     PollingEventRequest<GlossaryEntriesMemory> request,
-    [PollingEventParameter] string glossaryId)
+    [PollingEventParameter] GlossaryIdentifier glossary)
     {
         var memory = request.Memory ?? new GlossaryEntriesMemory
         {
             LastCreatedDate = DateTime.UtcNow
         };
 
-        var endpoint = $"/glossary-api/v2/glossaries/{glossaryId}/entries";
+        var endpoint = $"/glossary-api/v2/glossaries/{glossary.GlossaryUid}/entries";
 
         var smartlingRequest = new SmartlingRequest(endpoint, Method.Get);
 
