@@ -124,10 +124,11 @@ Navigate to apps and search for Smartling. If you cannot find Smartling then cli
 
 ## Events
 
-- **On job completed** and **On job completed (manual)** are triggered when a job is completed, signifying that all authorized content in a job, for all locales, has reached the _Published_ step of the workflow.
 - **On job cancelled** and **On job cancelled (manual)** are triggered when a job is cancelled.
 - **On string translation published** and **On string translation published (manual)** are triggered when a string translation is published for a locale.
-- **On job authorized** is triggered when a job is authorized.
+- **On jobs authorized** and **On specific job authorized** are triggered when a job reaches the **IN_PROGRESS** status. The project-level event monitors all jobs in a project, while the specific job event monitors a single job provided as input.
+- **On jobs completed** and **On specific job completed** are triggered when a job reaches the **COMPLETED** status (the project-level event also considers **CLOSED** jobs). The project-level event monitors all jobs in a project, while the specific job event checks the status of a single job.
+- **On glossary entries added** is triggered when new glossary entries are created in a glossary, returning the entries added since the last polling cycle based on their creation date.
 
 ## Missing features
 

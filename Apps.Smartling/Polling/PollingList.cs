@@ -1,4 +1,5 @@
 ﻿using Apps.Smartling.Api;
+using Apps.Smartling.Models.Dtos.Glossaries;
 using Apps.Smartling.Models.Dtos.Jobs;
 using Apps.Smartling.Models.Identifiers;
 using Apps.Smartling.Models.Responses;
@@ -12,7 +13,7 @@ namespace Apps.Smartling.Polling;
 [PollingEventList]
 public class PollingList(InvocationContext invocationContext) : SmartlingInvocable(invocationContext)
 {
-    [PollingEvent("On job authorized [Polling]")]
+    [PollingEvent("On jobs authorized [Polling]")]
     public async Task<PollingEventResponse<DateMemory, SearchJobsPollingResponse>> OnJobAuthorized(
         PollingEventRequest<DateMemory> request,
         [PollingEventParameter] ProjectIdentifier project)
@@ -94,6 +95,54 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
         }
     }
 
+    [PollingEvent("On specific job authorized [Polling]")]
+    public async Task<PollingEventResponse<jobStatusMemory, JobDto>> OnJobAuthorized(
+    PollingEventRequest<jobStatusMemory> request,
+    [PollingEventParameter] JobIdentifier jobIdentifier,
+    [PollingEventParameter] ProjectIdentifier project)
+    {
+        string projectId = await GetProjectId(project.ProjectId);
+
+        var jobRequest = new SmartlingRequest(
+            $"/jobs-api/v3/projects/{projectId}/jobs/{jobIdentifier.TranslationJobUid}",
+            Method.Get);
+
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<JobDto>>(jobRequest);
+        var job = response.Response.Data;
+
+        var newMemory = new jobStatusMemory
+        {
+            LastInteractionDate = DateTime.UtcNow,
+            LastJobStatus = job.JobStatus
+        };
+
+        if (request.Memory == null)
+        {
+            return new PollingEventResponse<jobStatusMemory, JobDto>
+            {
+                FlyBird = job.JobStatus == "IN_PROGRESS",
+                Memory = newMemory,
+                Result = job.JobStatus == "IN_PROGRESS" ? job : null
+            };
+        }
+
+        if (job.JobStatus == "IN_PROGRESS" &&
+            job.JobStatus != request.Memory.LastJobStatus)
+        {
+            return new PollingEventResponse<jobStatusMemory, JobDto>
+            {
+                FlyBird = true,
+                Memory = newMemory,
+                Result = job
+            };
+        }
+
+        return new PollingEventResponse<jobStatusMemory, JobDto>
+        {
+            FlyBird = false,
+            Memory = newMemory
+        };
+    }
 
     [PollingEvent("On jobs completed [Polling]")]
     public async Task<PollingEventResponse<DateMemory, SearchJobsPollingResponse>> OnJobsCompleted(
@@ -143,10 +192,10 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
             };
         }
 
-          var newCompletedJobs = jobs
-            .Where(j => (j.JobStatus == "COMPLETED" || j.JobStatus == "CLOSED")
-                     && !request.Memory.KnownJobIds.Contains(j.TranslationJobUid))
-            .ToArray();
+        var newCompletedJobs = jobs
+          .Where(j => (j.JobStatus == "COMPLETED" || j.JobStatus == "CLOSED")
+                   && !request.Memory.KnownJobIds.Contains(j.TranslationJobUid))
+          .ToArray();
 
         if (newCompletedJobs.Any())
         {
@@ -179,7 +228,7 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
 
     [PollingEvent("On specific job completed [Polling]")]
     public async Task<PollingEventResponse<jobStatusMemory, JobDto>> OnJobCompleted(
-        PollingEventRequest<jobStatusMemory> request, 
+        PollingEventRequest<jobStatusMemory> request,
         [PollingEventParameter] JobIdentifier jobIdentifier,
         [PollingEventParameter] ProjectIdentifier project)
     {
@@ -213,7 +262,8 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
                 Memory = newMemory,
                 Result = job
             };
-        } else
+        }
+        else
         {
             return new PollingEventResponse<jobStatusMemory, JobDto>
             {
@@ -222,4 +272,53 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
             };
         }
     }
+
+    [PollingEvent("On glossary entries added [Polling]")]
+    public async Task<PollingEventResponse<GlossaryEntriesMemory, List<GlossaryEntryDto>>> OnGlossaryEntriesAdded(
+    PollingEventRequest<GlossaryEntriesMemory> request,
+    [PollingEventParameter] GlossaryIdentifier glossary)
+    {
+        var memory = request.Memory ?? new GlossaryEntriesMemory
+        {
+            LastCreatedDate = DateTime.UtcNow
+        };
+
+        var endpoint = $"/glossary-api/v2/glossaries/{glossary.GlossaryUid}/entries";
+
+        var smartlingRequest = new SmartlingRequest(endpoint, Method.Get);
+
+        smartlingRequest.AddQueryParameter("createdFrom", memory.LastCreatedDate.ToString("o"));
+
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<List<GlossaryEntryDto>>>(smartlingRequest);
+        var entries = response.Response.Data ?? new List<GlossaryEntryDto>();
+
+        if (request.Memory == null)
+        {
+            return new PollingEventResponse<GlossaryEntriesMemory, List<GlossaryEntryDto>>
+            {
+                FlyBird = false,
+                Memory = memory
+            };
+        }
+
+        memory.LastCreatedDate = DateTime.UtcNow;
+
+        if (entries.Any())
+        {
+            memory.LastCreatedDate = entries.Max(e => e.CreatedDate);
+            return new PollingEventResponse<GlossaryEntriesMemory, List<GlossaryEntryDto>>
+            {
+                FlyBird = true,
+                Memory = memory,
+                Result = entries
+            };
+        }
+
+        return new PollingEventResponse<GlossaryEntriesMemory, List<GlossaryEntryDto>>
+        {
+            FlyBird = false,
+            Memory = memory
+        };
+    }
+
 }
