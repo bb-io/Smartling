@@ -10,7 +10,6 @@ using Blackbird.Applications.Sdk.Common.Invocation;
 using RestSharp;
 
 namespace Apps.Smartling.DataSourceHandlers;
-
 public class GlossaryEntryDataSourceHandler : SmartlingInvocable, IAsyncDataSourceHandler
 {
     private readonly GlossaryIdentifier _glossaryIdentifier;
