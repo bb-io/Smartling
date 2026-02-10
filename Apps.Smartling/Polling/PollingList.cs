@@ -274,7 +274,7 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
     }
 
     [PollingEvent("On glossary entries added [Polling]")]
-    public async Task<PollingEventResponse<GlossaryEntriesMemory, List<GlossaryEntryDto>>> OnGlossaryEntriesAdded(
+    public async Task<PollingEventResponse<GlossaryEntriesMemory, NewGlossaryEntriesResponse>> OnGlossaryEntriesAdded(
     PollingEventRequest<GlossaryEntriesMemory> request,
     [PollingEventParameter] GlossaryIdentifier glossary)
     {
@@ -294,7 +294,7 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
 
         if (request.Memory == null)
         {
-            return new PollingEventResponse<GlossaryEntriesMemory, List<GlossaryEntryDto>>
+            return new PollingEventResponse<GlossaryEntriesMemory, NewGlossaryEntriesResponse>
             {
                 FlyBird = false,
                 Memory = memory
@@ -306,15 +306,15 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
         if (entries.Any())
         {
             memory.LastCreatedDate = entries.Max(e => e.CreatedDate);
-            return new PollingEventResponse<GlossaryEntriesMemory, List<GlossaryEntryDto>>
+            return new PollingEventResponse<GlossaryEntriesMemory, NewGlossaryEntriesResponse>
             {
                 FlyBird = true,
                 Memory = memory,
-                Result = entries
+                Result = new NewGlossaryEntriesResponse {Entries = entries }
             };
         }
 
-        return new PollingEventResponse<GlossaryEntriesMemory, List<GlossaryEntryDto>>
+        return new PollingEventResponse<GlossaryEntriesMemory, NewGlossaryEntriesResponse>
         {
             FlyBird = false,
             Memory = memory
