@@ -96,7 +96,7 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
     }
 
     [PollingEvent("On specific job authorized [Polling]")]
-    public async Task<PollingEventResponse<jobStatusMemory, JobDto>> OnJobAuthorized(
+    public async Task<PollingEventResponse<jobStatusMemory, JobDto>> OnSpecificJobAuthorized(
     PollingEventRequest<jobStatusMemory> request,
     [PollingEventParameter] JobIdentifier jobIdentifier,
     [PollingEventParameter] ProjectIdentifier project)
