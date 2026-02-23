@@ -1,9 +1,13 @@
 ﻿using Apps.Smartling.Api;
+using Apps.Smartling.DataSourceHandlers;
+using Apps.Smartling.Models.Dtos;
 using Apps.Smartling.Models.Dtos.Glossaries;
 using Apps.Smartling.Models.Dtos.Jobs;
 using Apps.Smartling.Models.Identifiers;
 using Apps.Smartling.Models.Responses;
 using Apps.Smartling.Polling.Models;
+using Blackbird.Applications.Sdk.Common;
+using Blackbird.Applications.Sdk.Common.Dynamic;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Common.Polling;
 using RestSharp;
@@ -274,23 +278,52 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
     }
 
     [PollingEvent("On glossary entries added [Polling]")]
-    public async Task<PollingEventResponse<GlossaryEntriesMemory, NewGlossaryEntriesResponse>> OnGlossaryEntriesAdded(
-    PollingEventRequest<GlossaryEntriesMemory> request,
-    [PollingEventParameter] GlossaryIdentifier glossary)
+    public async Task<PollingEventResponse<GlossaryEntriesMemory, NewGlossaryEntriesResponse>>
+     OnGlossaryEntriesAdded(
+         PollingEventRequest<GlossaryEntriesMemory> request,
+         [PollingEventParameter] GlossaryIdentifier glossaryIdentifier,
+         [PollingEventParameter] [Display("Locale IDs")][DataSource(typeof(GlossaryTermLocaleDataSourceHandler))] IEnumerable<string>? localeIds)
     {
         var memory = request.Memory ?? new GlossaryEntriesMemory
         {
             LastCreatedDate = DateTime.UtcNow
         };
 
-        var endpoint = $"/glossary-api/v2/glossaries/{glossary.GlossaryUid}/entries";
+        var accountUid = await GetAccountUid();
 
-        var smartlingRequest = new SmartlingRequest(endpoint, Method.Get);
+        if (localeIds == null || !localeIds.Any())
+        {
+            var getGlossaryRequest =
+                new SmartlingRequest(
+                    $"/glossary-api/v3/accounts/{accountUid}/glossaries/{glossaryIdentifier.GlossaryUid}",
+                    Method.Get);
 
-        smartlingRequest.AddQueryParameter("createdFrom", memory.LastCreatedDate.ToString("o"));
+            var glossaryResponse =
+                await Client.ExecuteWithErrorHandling<ResponseWrapper<GlossaryDto>>(getGlossaryRequest);
 
-        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<List<GlossaryEntryDto>>>(smartlingRequest);
-        var entries = response.Response.Data ?? new List<GlossaryEntryDto>();
+            localeIds = glossaryResponse.Response.Data.LocaleIds;
+        }
+
+        var endpoint =
+            $"/glossary-api/v3/accounts/{accountUid}/glossaries/{glossaryIdentifier.GlossaryUid}/entries/search";
+
+        var smartlingRequest = new SmartlingRequest(endpoint, Method.Post);
+
+        smartlingRequest.AddJsonBody(new
+        {
+            localeIds = localeIds,
+            created = new
+            {
+                type = "after",
+                level = "ANY",
+                date = memory.LastCreatedDate
+            }
+        });
+
+        var response =
+            await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<GlossaryEntryDto>>>(smartlingRequest);
+
+        var entries = response.Response.Data?.Items ?? new List<GlossaryEntryDto>();
 
         if (request.Memory == null)
         {
@@ -301,16 +334,18 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
             };
         }
 
-        memory.LastCreatedDate = DateTime.UtcNow;
-
         if (entries.Any())
         {
             memory.LastCreatedDate = entries.Max(e => e.CreatedDate);
+
             return new PollingEventResponse<GlossaryEntriesMemory, NewGlossaryEntriesResponse>
             {
                 FlyBird = true,
                 Memory = memory,
-                Result = new NewGlossaryEntriesResponse {Entries = entries }
+                Result = new NewGlossaryEntriesResponse
+                {
+                    Entries = entries
+                }
             };
         }
 
