@@ -11,6 +11,7 @@ using Blackbird.Applications.Sdk.Common.Dynamic;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Common.Polling;
 using RestSharp;
+using System;
 
 namespace Apps.Smartling.Polling;
 
@@ -279,15 +280,25 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
 
     [PollingEvent("On glossary entries added [Polling]")]
     public async Task<PollingEventResponse<GlossaryEntriesMemory, NewGlossaryEntriesResponse>>
-     OnGlossaryEntriesAdded(
-         PollingEventRequest<GlossaryEntriesMemory> request,
-         [PollingEventParameter] GlossaryIdentifier glossaryIdentifier,
-         [PollingEventParameter] [Display("Locale IDs")][DataSource(typeof(GlossaryTermLocaleDataSourceHandler))] IEnumerable<string>? localeIds)
+      OnGlossaryEntriesAdded(
+          PollingEventRequest<GlossaryEntriesMemory> request,
+          [PollingEventParameter] GlossaryIdentifier glossaryIdentifier,
+          [PollingEventParameter] [Display("Locale IDs")] [DataSource(typeof(GlossaryTermLocaleDataSourceHandler))]
+        IEnumerable<string>? localeIds)
     {
-        var memory = request.Memory ?? new GlossaryEntriesMemory
+        var memory = new GlossaryEntriesMemory
         {
             LastCreatedDate = DateTime.UtcNow
         };
+
+        if (request.Memory == null)
+        {
+            return new PollingEventResponse<GlossaryEntriesMemory, NewGlossaryEntriesResponse>
+            {
+                FlyBird = false,
+                Memory = memory
+            };
+        }
 
         var accountUid = await GetAccountUid();
 
@@ -316,7 +327,7 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
             {
                 type = "after",
                 level = "ANY",
-                date = memory.LastCreatedDate
+                date = request.Memory.LastCreatedDate
             }
         });
 
@@ -325,7 +336,7 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
 
         var entries = response.Response.Data?.Items ?? new List<GlossaryEntryDto>();
 
-        if (request.Memory == null)
+        if (!entries.Any())
         {
             return new PollingEventResponse<GlossaryEntriesMemory, NewGlossaryEntriesResponse>
             {
@@ -334,25 +345,14 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
             };
         }
 
-        if (entries.Any())
-        {
-            memory.LastCreatedDate = entries.Max(e => e.CreatedDate);
-
-            return new PollingEventResponse<GlossaryEntriesMemory, NewGlossaryEntriesResponse>
-            {
-                FlyBird = true,
-                Memory = memory,
-                Result = new NewGlossaryEntriesResponse
-                {
-                    Entries = entries
-                }
-            };
-        }
-
         return new PollingEventResponse<GlossaryEntriesMemory, NewGlossaryEntriesResponse>
         {
-            FlyBird = false,
-            Memory = memory
+            FlyBird = true,
+            Memory = memory,
+            Result = new NewGlossaryEntriesResponse
+            {
+                Entries = entries
+            }
         };
     }
 
