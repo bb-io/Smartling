@@ -320,7 +320,7 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
 
         var smartlingRequest = new SmartlingRequest(endpoint, Method.Post);
 
-        var createdAfter = memory.LastCreatedDate.AddTicks(1);
+        var createdAfter = memory.LastCreatedDate.AddMinutes(1);
 
         smartlingRequest.AddJsonBody(new
         {
