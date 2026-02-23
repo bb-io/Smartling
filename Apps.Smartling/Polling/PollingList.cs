@@ -286,7 +286,7 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
           [PollingEventParameter] [Display("Locale IDs")] [DataSource(typeof(GlossaryTermLocaleDataSourceHandler))]
         IEnumerable<string>? localeIds)
     {
-        var memory = request.Memory ?? new GlossaryEntriesMemory
+        var memory = new GlossaryEntriesMemory
         {
             LastCreatedDate = DateTime.UtcNow
         };
@@ -320,8 +320,6 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
 
         var smartlingRequest = new SmartlingRequest(endpoint, Method.Post);
 
-        var createdAfter = memory.LastCreatedDate.AddMinutes(1);
-
         smartlingRequest.AddJsonBody(new
         {
             localeIds = localeIds,
@@ -329,7 +327,7 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
             {
                 type = "after",
                 level = "ANY",
-                date = createdAfter
+                date = request.Memory.LastCreatedDate
             }
         });
 
@@ -346,9 +344,6 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
                 Memory = memory
             };
         }
-
-        var maxCreatedDate = entries.Max(e => e.CreatedDate);
-        memory.LastCreatedDate = maxCreatedDate;
 
         return new PollingEventResponse<GlossaryEntriesMemory, NewGlossaryEntriesResponse>
         {
