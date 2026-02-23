@@ -1,4 +1,5 @@
 ﻿using Apps.Smartling.Api;
+using Apps.Smartling.Models.Dtos;
 using Apps.Smartling.Models.Dtos.Glossaries;
 using Apps.Smartling.Models.Dtos.Jobs;
 using Apps.Smartling.Models.Identifiers;
@@ -274,23 +275,37 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
     }
 
     [PollingEvent("On glossary entries added [Polling]")]
-    public async Task<PollingEventResponse<GlossaryEntriesMemory, NewGlossaryEntriesResponse>> OnGlossaryEntriesAdded(
-    PollingEventRequest<GlossaryEntriesMemory> request,
-    [PollingEventParameter] GlossaryIdentifier glossary)
+    public async Task<PollingEventResponse<GlossaryEntriesMemory, NewGlossaryEntriesResponse>>
+      OnGlossaryEntriesAdded(
+          PollingEventRequest<GlossaryEntriesMemory> request,
+          [PollingEventParameter] GlossaryIdentifier glossary)
     {
         var memory = request.Memory ?? new GlossaryEntriesMemory
         {
             LastCreatedDate = DateTime.UtcNow
         };
 
-        var endpoint = $"/glossary-api/v2/glossaries/{glossary.GlossaryUid}/entries";
+        var accountUid = await GetAccountUid();
 
-        var smartlingRequest = new SmartlingRequest(endpoint, Method.Get);
+        var endpoint =
+            $"/glossary-api/v3/accounts/{accountUid}/glossaries/{glossary.GlossaryUid}/entries/search";
 
-        smartlingRequest.AddQueryParameter("createdFrom", memory.LastCreatedDate.ToString("o"));
+        var smartlingRequest = new SmartlingRequest(endpoint, Method.Post);
 
-        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<List<GlossaryEntryDto>>>(smartlingRequest);
-        var entries = response.Response.Data ?? new List<GlossaryEntryDto>();
+        smartlingRequest.AddJsonBody(new
+        {
+            created = new
+            {
+                type = "after",
+                level = "ANY",
+                date = memory.LastCreatedDate
+            }
+        });
+
+        var response =
+            await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<GlossaryEntryDto>>>(smartlingRequest);
+
+        var entries = response.Response.Data?.Items ?? new List<GlossaryEntryDto>();
 
         if (request.Memory == null)
         {
@@ -301,16 +316,18 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
             };
         }
 
-        memory.LastCreatedDate = DateTime.UtcNow;
-
         if (entries.Any())
         {
             memory.LastCreatedDate = entries.Max(e => e.CreatedDate);
+
             return new PollingEventResponse<GlossaryEntriesMemory, NewGlossaryEntriesResponse>
             {
                 FlyBird = true,
                 Memory = memory,
-                Result = new NewGlossaryEntriesResponse {Entries = entries }
+                Result = new NewGlossaryEntriesResponse
+                {
+                    Entries = entries
+                }
             };
         }
 
