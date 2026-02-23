@@ -1,10 +1,13 @@
 ﻿using Apps.Smartling.Api;
+using Apps.Smartling.DataSourceHandlers;
 using Apps.Smartling.Models.Dtos;
 using Apps.Smartling.Models.Dtos.Glossaries;
 using Apps.Smartling.Models.Dtos.Jobs;
 using Apps.Smartling.Models.Identifiers;
 using Apps.Smartling.Models.Responses;
 using Apps.Smartling.Polling.Models;
+using Blackbird.Applications.Sdk.Common;
+using Blackbird.Applications.Sdk.Common.Dynamic;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Common.Polling;
 using RestSharp;
@@ -276,9 +279,10 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
 
     [PollingEvent("On glossary entries added [Polling]")]
     public async Task<PollingEventResponse<GlossaryEntriesMemory, NewGlossaryEntriesResponse>>
-      OnGlossaryEntriesAdded(
-          PollingEventRequest<GlossaryEntriesMemory> request,
-          [PollingEventParameter] GlossaryIdentifier glossary)
+     OnGlossaryEntriesAdded(
+         PollingEventRequest<GlossaryEntriesMemory> request,
+         [PollingEventParameter] GlossaryIdentifier glossaryIdentifier,
+         [PollingEventParameter] [Display("Locale IDs")][DataSource(typeof(GlossaryTermLocaleDataSourceHandler))] IEnumerable<string>? localeIds)
     {
         var memory = request.Memory ?? new GlossaryEntriesMemory
         {
@@ -287,13 +291,27 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
 
         var accountUid = await GetAccountUid();
 
+        if (localeIds == null || !localeIds.Any())
+        {
+            var getGlossaryRequest =
+                new SmartlingRequest(
+                    $"/glossary-api/v3/accounts/{accountUid}/glossaries/{glossaryIdentifier.GlossaryUid}",
+                    Method.Get);
+
+            var glossaryResponse =
+                await Client.ExecuteWithErrorHandling<ResponseWrapper<GlossaryDto>>(getGlossaryRequest);
+
+            localeIds = glossaryResponse.Response.Data.LocaleIds;
+        }
+
         var endpoint =
-            $"/glossary-api/v3/accounts/{accountUid}/glossaries/{glossary.GlossaryUid}/entries/search";
+            $"/glossary-api/v3/accounts/{accountUid}/glossaries/{glossaryIdentifier.GlossaryUid}/entries/search";
 
         var smartlingRequest = new SmartlingRequest(endpoint, Method.Post);
 
         smartlingRequest.AddJsonBody(new
         {
+            localeIds = localeIds,
             created = new
             {
                 type = "after",
