@@ -25,8 +25,26 @@ public class SmartlingClient : BlackBirdRestClient
 
     protected override Exception ConfigureErrorException(RestResponse response)
     {
-        var errors = JsonConvert.DeserializeObject<ErrorResponseWrapper>(response.Content);
-        throw new PluginApplicationException($"{errors.Response.Code}: {string.Join("; ", errors.Response.Errors.Select(error => error.Message))}");
+        if (string.IsNullOrWhiteSpace(response.Content))
+            throw new PluginApplicationException("An error occured, but server did not return any content");
+
+        if (response.ContentType == "application/json")
+        {
+            var errors = JsonConvert.DeserializeObject<ErrorResponseWrapper>(response.Content) ??
+                throw new PluginApplicationException($"Cannot deserialize the error response. {response.Content}");
+
+            string messages = string.Join("; ", errors.Response.Errors.Select(error => error.Message));
+            throw new PluginApplicationException($"{errors.Response.Code}: {messages}");
+        }
+        if (response.ContentType == "text/html")
+        {
+            string htmlSnippet = response.Content.Length > 300
+                ? response.Content[..300]
+                : response.Content;
+            throw new PluginApplicationException($"HTML error (truncated): {htmlSnippet}");
+        }
+
+        throw new PluginApplicationException($"Unknown error. Raw response: {response.Content}");
     }
 
     private static string GetAccessToken(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders)
