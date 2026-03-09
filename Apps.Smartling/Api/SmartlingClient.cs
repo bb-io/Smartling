@@ -37,7 +37,12 @@ public class SmartlingClient : BlackBirdRestClient
             throw new PluginApplicationException($"{errors.Response.Code}: {messages}");
         }
         if (response.ContentType == "text/html")
-            throw new PluginApplicationException(response.Content);
+        {
+            string htmlSnippet = response.Content.Length > 300
+                ? response.Content[..300]
+                : response.Content;
+            throw new PluginApplicationException($"HTML error (truncated): {htmlSnippet}");
+        }
 
         throw new PluginApplicationException($"Unknown error. Raw response: {response.Content}");
     }
