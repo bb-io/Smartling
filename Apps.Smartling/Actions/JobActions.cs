@@ -102,10 +102,18 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
         [ActionParameter] ProjectIdentifier project, 
         [ActionParameter] SearchJobsRequest input)
     {
-        string projectId = await GetProjectId(project.ProjectId ?? input.AccountWideSearchProjectIds?.FirstOrDefault());
-        string accountId = await GetAccountUid();
-
-        string searchScope = input.SearchAccountWide == true ? $"accounts/{accountId}" : $"projects/{projectId}";
+        string searchScope;
+        if (input.SearchAccountWide == true)
+        {
+            string accountId = await GetAccountUid();
+            searchScope = $"accounts/{accountId}";
+        }
+        else
+        {
+            string projectId = await GetProjectId(project.ProjectId);
+            searchScope = $"projects/{projectId}";
+        }
+        
         var request = new SmartlingRequest($"/jobs-api/v3/{searchScope}/jobs", Method.Get);
 
         if (input.TranslationJobStatus != null && input.TranslationJobStatus.Any())
