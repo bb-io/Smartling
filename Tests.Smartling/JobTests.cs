@@ -64,4 +64,23 @@ public class JobTests : TestBaseMultipleConnections
         PrintResult(response);
         Assert.IsNotNull(response);
     }
+
+    [TestMethod, ContextDataSource]
+    public async Task SearchJobs_ReturnsJobs(InvocationContext context)
+    {
+        // Arrange
+        var action = new JobActions(context);
+        var projectId = new ProjectIdentifier { ProjectId = "" };
+        var request = new SearchJobsRequest 
+        { 
+            
+        };
+
+        // Act
+        var response = await action.SearchJobs(projectId, request);
+
+        // Assert
+        PrintResult(response);
+        Assert.IsNotNull(response);
+    } 
 }

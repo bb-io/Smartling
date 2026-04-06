@@ -96,18 +96,37 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
         return new(scheduleItems);
     }
 
-    [Action("Search jobs", Description = "List jobs that match the specified filter options. If no parameters are " +
-                                         "specified, all jobs will be returned.")]
+    [Action("Search jobs", Description = 
+        "List jobs that match the specified filter options. If no parameters are specified, all jobs will be returned.")]
     public async Task<SearchJobsResponse> SearchJobs(
         [ActionParameter] ProjectIdentifier project, 
         [ActionParameter] SearchJobsRequest input)
     {
-        string projectId = await GetProjectId(project.ProjectId);
-        var translationJobStatus = input.TranslationJobStatus == null ? "" : string.Join(",", input.TranslationJobStatus);
-        var request = new SmartlingRequest(
-            $"/jobs-api/v3/projects/{projectId}/jobs?translationJobStatus={translationJobStatus}&limit={input.Limit}",
-            Method.Get
-        );
+        string searchScope;
+        if (input.SearchAccountWide == true)
+        {
+            string accountId = await GetAccountUid();
+            searchScope = $"accounts/{accountId}";
+        }
+        else
+        {
+            string projectId = await GetProjectId(project.ProjectId);
+            searchScope = $"projects/{projectId}";
+        }
+        
+        var request = new SmartlingRequest($"/jobs-api/v3/{searchScope}/jobs", Method.Get);
+
+        if (input.TranslationJobStatus != null && input.TranslationJobStatus.Any())
+            request.AddQueryParameter("translationJobStatus", string.Join(",", input.TranslationJobStatus));
+
+        if (!string.IsNullOrEmpty(input.JobNameContains))
+            request.AddQueryParameter("jobName", input.JobNameContains);
+
+        if (input.Limit.HasValue && input.Limit > 0)
+            request.AddQueryParameter("limit", (int)input.Limit);
+
+        if (input.SearchAccountWide == true && input.AccountWideSearchProjectIds != null)
+            request.AddQueryParameter("projectIds", string.Join(",", input.AccountWideSearchProjectIds));
 
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<JobDto>>>(request);
         var jobs = response.Response.Data.Items;
