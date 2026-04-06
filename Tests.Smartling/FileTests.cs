@@ -31,4 +31,27 @@ public class FileTests : TestBaseMultipleConnections
         PrintResult(response);
         Assert.IsNotNull(response);
     }
+
+    [TestMethod, ContextDataSource(ConnectionTypes.ProjectWide)]
+    public async Task DownloadTranslatedFile_IsSuccess(InvocationContext invocationContext)
+    {
+        // Arrange
+        var action = new FileActions(invocationContext, FileManager);
+        var project = new ProjectIdentifier();
+        var sourceFileIdentifier = new SourceFileIdentifier
+        {
+            FileUri = "Test static composition_en-US.html",
+        };
+        var targetLocaleIdentifier = new TargetLocaleIdentifier
+        {
+            TargetLocaleId = "fr-FR"
+        };
+
+        // Act
+        var response = await action.DownloadTranslatedFile(project, sourceFileIdentifier, targetLocaleIdentifier);
+
+        // Assert
+        PrintResult(response);
+        Assert.IsNotNull(response);
+    }
 }

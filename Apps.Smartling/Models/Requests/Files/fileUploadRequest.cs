@@ -11,6 +11,9 @@ namespace Apps.Smartling.Models.Requests.Files
         [StaticDataSource(typeof(FileTypeDataSourceHandler))]
         public string? Type {get; set;}
 
+        [Display("Upload as XLIFF")]
+        public bool? UploadAsXliff { get; set; }
+
         public IEnumerable<string>? Directives { get; set; }
 
         [Display("Directive values")]

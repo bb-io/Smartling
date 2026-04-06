@@ -14,6 +14,7 @@ public class FileTypeDataSourceHandler : IStaticDataSourceHandler
             { "html", "html" },
             { "java_properties", "java_properties" },
             { "xliff", "xliff" },
+            { "xliff2", "xliff2" },
             { "xml", "xml" },
             { "json", "json" },
             { "docx", "docx" },
