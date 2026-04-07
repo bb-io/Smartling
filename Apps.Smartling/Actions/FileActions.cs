@@ -123,14 +123,9 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
         var endpoint =
             $"/files-api/v2/projects/{projectId}/locales/{targetLocale.TargetLocaleId}/file?fileUri={fileIdentifier.FileUri}";
         var downloadedFile = await DownloadFileContent(endpoint);
-        var convertedFile = SmartlingFileConversionHelper.ConvertDownloadedTranslation(
-            downloadedFile.FileBytes,
-            downloadedFile.FileName,
-            downloadedFile.ContentType);
-
-        var localizedFileName = CreateNameForTranslatedFile(convertedFile.FileName, targetLocale.TargetLocaleId);
-        using var stream = new MemoryStream(convertedFile.FileBytes);
-        var uploadedFile = await fileManagementClient.UploadAsync(stream, convertedFile.ContentType, localizedFileName);
+        var localizedFileName = CreateNameForTranslatedFile(downloadedFile.FileName, targetLocale.TargetLocaleId);
+        using var stream = new MemoryStream(downloadedFile.FileBytes);
+        var uploadedFile = await fileManagementClient.UploadAsync(stream, downloadedFile.ContentType, localizedFileName);
         return new() { File = uploadedFile };
     }
     

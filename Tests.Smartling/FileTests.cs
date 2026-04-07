@@ -3,7 +3,10 @@ using Apps.Smartling.Actions;
 using Apps.Smartling.Constants;
 using Apps.Smartling.Models.Identifiers;
 using Apps.Smartling.Models.Requests.Files;
+using Blackbird.Applications.Sdk.Common.Files;
 using Blackbird.Applications.Sdk.Common.Invocation;
+using System.Net.Mime;
+using Apps.Smartling.Models;
 
 namespace Tests.Smartling;
 
@@ -49,6 +52,56 @@ public class FileTests : TestBaseMultipleConnections
 
         // Act
         var response = await action.DownloadTranslatedFile(project, sourceFileIdentifier, targetLocaleIdentifier);
+
+        // Assert
+        PrintResult(response);
+        Assert.IsNotNull(response);
+    }
+
+    [TestMethod, ContextDataSource(ConnectionTypes.ProjectWide)]
+    public async Task DownloadTranslatedFile_AsXliffFromSandbox_IsSuccess(InvocationContext invocationContext)
+    {
+        // Arrange
+        var action = new FileActions(invocationContext, FileManager);
+        var project = new ProjectIdentifier
+        {
+            ProjectId = "ca8b02a02"
+        };
+        var sourceFileIdentifier = new SourceFileIdentifier
+        {
+            FileUri = "MyRepairs.Online_en-US_fr-FR1.html.xlf",
+        };
+        var targetLocaleIdentifier = new TargetLocaleIdentifier
+        {
+            TargetLocaleId = "da"
+        };
+
+        // Act
+        var response = await action.DownloadTranslatedFile(project, sourceFileIdentifier, targetLocaleIdentifier);
+
+        // Assert
+        PrintResult(response);
+        Assert.IsNotNull(response);
+    }
+
+    [TestMethod, ContextDataSource(ConnectionTypes.ProjectWide)]
+    public async Task UploadFile_AsXliff_IsSuccess(InvocationContext invocationContext)
+    {
+        // Arrange
+        var action = new FileActions(invocationContext, FileManager);
+        var project = new ProjectIdentifier { ProjectId = "ca8b02a02" };
+        var file = new FileWrapper
+        {
+            File = await FileManager.UploadTestFileAsync("MyRepairs.Online_en-US_fr-FR1.html", MediaTypeNames.Text.Html)
+        };
+        var input = new fileUploadRequest
+        {
+            Type = "html",
+            UploadAsXliff = true
+        };
+
+        // Act
+        var response = await action.UploadFile(project, file, input);
 
         // Assert
         PrintResult(response);

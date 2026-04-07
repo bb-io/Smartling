@@ -15,7 +15,7 @@
       <PackageReference Include="Blackbird.Applications.SDK.Extensions.FileManagement" Version="1.0.2-alpha2" />
       <PackageReference Include="Blackbird.Applications.Sdk.Glossaries.Utils" Version="1.0.0" />
       <PackageReference Include="Blackbird.Applications.Sdk.Utils" Version="1.0.25" />
-      <PackageReference Include="Blackbird.Filters" Version="1.1.54" />
+      <PackageReference Include="Blackbird.Filters" Version="1.1.56" />
       <PackageReference Include="MimeTypes" Version="2.4.1">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>
