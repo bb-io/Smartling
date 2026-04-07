@@ -1,7 +1,6 @@
 ﻿using Apps.Smartling.DataSourceHandlers.EnumHandlers;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Dictionaries;
-using Blackbird.Applications.Sdk.Common.Dynamic;
 
 namespace Apps.Smartling.Models.Requests.Files
 {
@@ -10,6 +9,9 @@ namespace Apps.Smartling.Models.Requests.Files
         [Display("File type")]
         [StaticDataSource(typeof(FileTypeDataSourceHandler))]
         public string? Type {get; set;}
+
+        [Display("Upload as XLIFF")]
+        public bool? UploadAsXliff { get; set; }
 
         public IEnumerable<string>? Directives { get; set; }
 

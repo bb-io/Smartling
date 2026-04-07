@@ -10,6 +10,7 @@ using Apps.Smartling.Models.Identifiers;
 using Apps.Smartling.Models.Requests.Files;
 using Apps.Smartling.Models.Responses;
 using Apps.Smartling.Models.Responses.Files;
+using Apps.Smartling.Utils;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Files;
@@ -121,9 +122,11 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
         string projectId = await GetProjectId(project.ProjectId);
         var endpoint =
             $"/files-api/v2/projects/{projectId}/locales/{targetLocale.TargetLocaleId}/file?fileUri={fileIdentifier.FileUri}";
-        var file = await DownloadFile(endpoint);
-        file.Name = CreateNameForTranslatedFile(file.Name, targetLocale.TargetLocaleId);
-        return new() { File = file };
+        var downloadedFile = await DownloadFileContent(endpoint);
+        var localizedFileName = CreateNameForTranslatedFile(downloadedFile.FileName, targetLocale.TargetLocaleId);
+        using var stream = new MemoryStream(downloadedFile.FileBytes);
+        var uploadedFile = await fileManagementClient.UploadAsync(stream, downloadedFile.ContentType, localizedFileName);
+        return new() { File = uploadedFile };
     }
     
     [Action("Download file translations", Description = "Download all translations for the requested file.")]
@@ -176,15 +179,20 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
 
     private async Task<FileReference> DownloadFile(string endpoint)
     {
+        var downloadedFile = await DownloadFileContent(endpoint);
+        using var stream = new MemoryStream(downloadedFile.FileBytes);
+        var file = await fileManagementClient.UploadAsync(stream, downloadedFile.ContentType, downloadedFile.FileName);
+        return file;
+    }
+
+    private async Task<DownloadedFileContent> DownloadFileContent(string endpoint)
+    {
         var request = new SmartlingRequest(endpoint, Method.Get);
         var response = await Client.ExecuteWithErrorHandling(request);
         var filename = response.ContentHeaders.First(header => header.Name == "Content-Disposition").Value.ToString()
             .Split('"')[1];
         var contentType = response.ContentType.Split(';')[0];
-
-        using var stream = new MemoryStream(response.RawBytes);
-        var file = await fileManagementClient.UploadAsync(stream, contentType, filename);
-        return file;
+        return new DownloadedFileContent(response.RawBytes, filename, contentType);
     }
 
     private static string FormatSmartlingDate(DateTime dtUtc) =>
@@ -208,8 +216,15 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
         [ActionParameter] fileUploadRequest FileInput)
     {
         string projectId = await GetProjectId(project.ProjectId);
-        var fileUri = file.File.Name;
-        var fileType = FileInput != null && !string.IsNullOrEmpty(FileInput?.Type) ? FileInput.Type : GetFileType(file.File.Name);
+        var requestedFileType = FileInput != null && !string.IsNullOrEmpty(FileInput.Type) ? FileInput.Type : GetFileType(file.File.Name);
+        var originalFileBytes = await (await fileManagementClient.DownloadAsync(file.File)).GetByteData();
+        var preparedUploadFile = SmartlingFileConversionHelper.PrepareUploadFile(
+            originalFileBytes,
+            file.File.Name,
+            requestedFileType,
+            FileInput?.UploadAsXliff);
+        var fileUri = preparedUploadFile.FileUri;
+        var fileType = preparedUploadFile.FileType;
         var getTargetFileDataRequest =
             new SmartlingRequest($"/files-api/v2/projects/{projectId}/target-file-types", Method.Post);
         getTargetFileDataRequest.AddJsonBody(new
@@ -228,8 +243,7 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
         
         var uploadFileRequest = new SmartlingRequest($"/files-api/v2/projects/{projectId}/file", Method.Post);
 
-        var fileBytes = fileManagementClient.DownloadAsync(file.File).Result.GetByteData().Result;
-        uploadFileRequest.AddFile("file", fileBytes, file.File.Name);
+        uploadFileRequest.AddFile("file", preparedUploadFile.FileBytes, fileUri);
         uploadFileRequest.AddParameter("fileUri", fileUri);
         uploadFileRequest.AddParameter("fileType", fileType);
         if (FileInput != null && FileInput.Directives != null && FileInput.Directives.Any()
@@ -289,8 +303,15 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
         [ActionParameter] fileUploadRequest FileInput)
     {
         string projectId = await GetProjectId(project.ProjectId);
-        var fileUri = file.File.Name;
-        var fileType = FileInput != null && !string.IsNullOrEmpty(FileInput?.Type) ? FileInput.Type : GetFileType(file.File.Name);
+        var requestedFileType = FileInput != null && !string.IsNullOrEmpty(FileInput.Type) ? FileInput.Type : GetFileType(file.File.Name);
+        var originalFileBytes = await (await fileManagementClient.DownloadAsync(file.File)).GetByteData();
+        var preparedUploadFile = SmartlingFileConversionHelper.PrepareUploadFile(
+            originalFileBytes,
+            file.File.Name,
+            requestedFileType,
+            FileInput?.UploadAsXliff);
+        var fileUri = preparedUploadFile.FileUri;
+        var fileType = preparedUploadFile.FileType;
         var getTargetFileDataRequest =
             new SmartlingRequest($"/files-api/v2/projects/{projectId}/target-file-types", Method.Post);
         getTargetFileDataRequest.AddJsonBody(new
@@ -309,8 +330,7 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
 
         var uploadFileRequest = new SmartlingRequest($"/files-api/v2/projects/{projectId}/file", Method.Post);
 
-        var fileBytes = fileManagementClient.DownloadAsync(file.File).Result.GetByteData().Result;
-        uploadFileRequest.AddFile("file", fileBytes, file.File.Name);
+        uploadFileRequest.AddFile("file", preparedUploadFile.FileBytes, fileUri);
         uploadFileRequest.AddParameter("fileUri", fileUri);
         uploadFileRequest.AddParameter("fileType", fileType);
         if (FileInput != null && FileInput.Directives != null && FileInput.Directives.Any()
