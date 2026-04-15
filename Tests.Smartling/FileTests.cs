@@ -107,4 +107,27 @@ public class FileTests : TestBaseMultipleConnections
         PrintResult(response);
         Assert.IsNotNull(response);
     }
+
+    [TestMethod, ContextDataSource(ConnectionTypes.ProjectWide)]
+    public async Task GetGlossaryEntry_IsSuccess(InvocationContext invocationContext)
+    {
+        // Arrange
+        var action = new GlossaryActions(invocationContext, FileManager);
+        var project = new GlossaryIdentifier
+        {
+            GlossaryUid = "e0f0e418-5f42-4a62-8b16-d913fa7d08ae"
+        };
+        var sourceFileIdentifier = new GlossaryEntryIdentifier
+        {
+            EntryUid = "30758fd2-246e-4662-932e-18446f39c126"
+        };
+    
+
+        // Act
+        var response = await action.GetGlossaryEntry(project, sourceFileIdentifier);
+
+        // Assert
+        PrintResult(response);
+        Assert.IsNotNull(response);
+    }
 }

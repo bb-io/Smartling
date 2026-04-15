@@ -627,7 +627,11 @@ public class GlossaryActions : SmartlingInvocable
     [Action("Get glossary entry", Description = "Retrieve a glossary entry.")]
     public async Task<GlossaryEntryDto> GetGlossaryEntry([ActionParameter] GlossaryIdentifier glossaryIdentifier,
         [ActionParameter] GlossaryEntryIdentifier glossaryEntryIdentifier)
-        => await GetGlossaryEntryAsync(glossaryIdentifier, glossaryEntryIdentifier);
+    {
+        var entry = await GetGlossaryEntryAsync(glossaryIdentifier, glossaryEntryIdentifier);
+        await EnrichGlossaryEntryLabelsAsync(entry);
+        return entry;
+    }
 
     [Action("Search glossary entries", Description = "List glossary entries that match the specified filter options. " +
                                                      "If no parameters are specified, all glossary entries will be returned.")]
@@ -911,6 +915,27 @@ public class GlossaryActions : SmartlingInvocable
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<GlossaryEntryDto>>(request);
         var entry = response.Response.Data;
         return entry;
+    }
+
+    private async Task EnrichGlossaryEntryLabelsAsync(GlossaryEntryDto entry)
+    {
+        var labelUids = entry.LabelUids?.ToArray();
+
+        if (labelUids == null || labelUids.Length == 0)
+        {
+            entry.LabelTexts = Array.Empty<string>();
+            return;
+        }
+
+        var request = new SmartlingRequest($"/glossary-api/v3/accounts/{_accountUid}/labels", Method.Get);
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<GlossaryLabelDto>>>(request);
+        var labels = response.Response.Data.Items
+            .ToDictionary(label => label.LabelUid, label => label.LabelText);
+
+        entry.LabelTexts = labelUids
+            .Where(labelUid => labels.ContainsKey(labelUid))
+            .Select(labelUid => labels[labelUid])
+            .ToArray();
     }
 
     #endregion
