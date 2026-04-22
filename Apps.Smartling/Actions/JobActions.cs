@@ -103,6 +103,7 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
         [ActionParameter] SearchJobsRequest input)
     {
         string searchScope;
+        string? projectId = null;
         if (input.SearchAccountWide == true)
         {
             string accountId = await GetAccountUid();
@@ -110,7 +111,7 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
         }
         else
         {
-            string projectId = await GetProjectId(project.ProjectId);
+            projectId = await GetProjectId(project.ProjectId);
             searchScope = $"projects/{projectId}";
         }
         
@@ -130,6 +131,10 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
 
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<JobDto>>>(request);
         var jobs = response.Response.Data.Items;
+
+        if (projectId is not null)
+            foreach (var job in jobs)
+                job.ProjectId = projectId;
 
         if (input.CreatedDateBefore != null)
             jobs = jobs.Where(job => job.CreatedDate <= input.CreatedDateBefore);
