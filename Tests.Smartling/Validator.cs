@@ -1,13 +1,14 @@
 using SmartlingTests.Base;
 using Apps.Smartling.Connections;
 using Blackbird.Applications.Sdk.Common.Authentication;
+using Tests.Smartling.Base;
 
 namespace Tests.Smartling;
 
 [TestClass]
 public class Validator : TestBase
 {
-    [TestMethod]
+    [TestMethod, ContextDataSource]
     public async Task ValidatesCorrectConnection()
     {
         // Arrange

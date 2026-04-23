@@ -7,6 +7,9 @@ public class JobDto
 {
     [Display("Job ID")]
     public string TranslationJobUid { get; set; }
+
+    [Display("Project ID")]
+    public string? ProjectId { get; set; }
     
     [Display("Job name")]
     public string JobName { get; set; }
