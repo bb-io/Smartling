@@ -34,6 +34,24 @@ public class IssueActions(InvocationContext invocationContext) : SmartlingInvoca
         return issue;
     }
 
+    [Action("Get issue comments", Description = "Retrieve all comments for a specific issue.")]
+    public async Task<GetIssueCommentsResponse> GetIssueComments(
+        [ActionParameter] ProjectIdentifier project,
+        [ActionParameter] IssueIdentifier issueIdentifier)
+    {
+        string projectId = await GetProjectId(project.ProjectId);
+
+        var request = new SmartlingRequest(
+            $"/issues-api/v2/projects/{projectId}/issues/{issueIdentifier.IssueUid}/comments",
+            Method.Get
+        );
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<IssueCommentDto>>>(request);
+        var comments = response.Response.Data.Items ?? Enumerable.Empty<IssueCommentDto>();
+        var totalCount = response.Response.Data.TotalCount ?? comments.Count();
+
+        return new(comments, totalCount);
+    }
+
     [Action("Search issues", Description = "List issues that match the specified filter options. If no parameters are " +
                                            "specified, all issues will be returned.")]
     public async Task<SearchIssuesResponse> SearchIssues(
