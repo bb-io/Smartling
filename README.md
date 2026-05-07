@@ -127,13 +127,16 @@ Navigate to apps and search for Smartling. If you cannot find Smartling then cli
 
 - **On job cancelled** and **On job cancelled (manual)** are triggered when a job is cancelled.
 - **On string translation published** and **On string translation published (manual)** are triggered when a string translation is published for a locale.
+- **On source issue created** and **On source issue created (manual)** are triggered when a source issue is created.
+- **On translation issue created** and **On translation issue created (manual)** are triggered when a translation issue is created.
+- **On source issue comment created** and **On source issue comment created (manual)** are triggered when a comment is added to a source issue.
+- **On translation issue comment created** and **On translation issue comment created (manual)** are triggered when a comment is added to a translation issue.
 - **On jobs authorized** and **On specific job authorized** are triggered when a job reaches the **IN_PROGRESS** status. The project-level event monitors all jobs in a project, while the specific job event monitors a single job provided as input.
 - **On jobs completed** and **On specific job completed** are triggered when a job reaches the **COMPLETED** status (the project-level event also considers **CLOSED** jobs). The project-level event monitors all jobs in a project, while the specific job event checks the status of a single job.
 - **On glossary entries added** is triggered when new glossary entries are created in a glossary, returning the entries added since the last polling cycle based on their creation date.
 
 ## Missing features
 
-- Issue webhooks
 - Tags
 - Translation quality checks
 - File Machine Translations
