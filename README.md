@@ -88,6 +88,7 @@ Navigate to apps and search for Smartling. If you cannot find Smartling then cli
 ### Issues
 
 - **Get issue** retrieves detailed information about a single issue.
+- **Get issue comments** retrieves all comments for a specific issue.
 - **Search issues** lists issues that match the specified filter options. If no parameters are specified, all issues will be returned.
 - **Create issue** creates a new issue for a string. Maximum length of _Issue text_ is 4000 characters. _Target language_ parameter is required for issues of the _Translation_ type. 
 - **Edit issue**. Specify only fields that need to be updated. Maximum length of _Issue text_ is 4000 characters. _Target language_ parameter is required when updating an issue to have the _Translation_ type. _Issue subtype_ parameter is required when updating _Issue type_.
@@ -132,7 +133,6 @@ Navigate to apps and search for Smartling. If you cannot find Smartling then cli
 
 ## Missing features
 
-- Issue comments
 - Issue webhooks
 - Tags
 - Translation quality checks
