@@ -3,5 +3,5 @@
 public class ApplicationConstants
 {
     public const string SmartlingBridgePath = "/webhooks/smartling";
-    public const string BlackbirdToken = "#{SMARTLING_BLACKBIRD_TOKEN}#";
+    public const string BlackbirdToken = "#{BLACKBIRD_SMARTLING_TOKEN}#";
 }

@@ -17,6 +17,9 @@ public class GlossaryEntryDto
     
     [Display("Labels")]
     public IEnumerable<string> LabelUids { get; set; }
+
+    [Display("Label texts")]
+    public IEnumerable<string>? LabelTexts { get; set; }
     
     public IEnumerable<GlossaryEntryTranslationDto> Translations { get; set; }
     
