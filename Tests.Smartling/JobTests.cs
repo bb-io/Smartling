@@ -70,7 +70,7 @@ public class JobTests : TestBaseMultipleConnections
     {
         // Arrange
         var action = new JobActions(context);
-        var projectId = new ProjectIdentifier { ProjectId = "" };
+        var projectId = new ProjectIdentifier { ProjectId = "2f5078602" };
         var request = new SearchJobsRequest 
         { 
             
@@ -82,5 +82,46 @@ public class JobTests : TestBaseMultipleConnections
         // Assert
         PrintResult(response);
         Assert.IsNotNull(response);
-    } 
+    }
+
+    [TestMethod, ContextDataSource]
+    public async Task ListStringsInJob_ReturnsJobs(InvocationContext context)
+    {
+        // Arrange
+        var action = new StringActions(context);
+        var projectId = new ProjectIdentifier { ProjectId = "2f5078602" };
+        var jobId = new JobIdentifier { TranslationJobUid = "oetero5fwz2f" };
+        var request = new ListStringsRequest
+        {
+
+        };
+
+        // Act
+        var response = await action.ListStringsInJob(projectId, jobId, request);
+
+        // Assert
+        PrintResult(response);
+        Assert.IsNotNull(response);
+    }
+
+    //a1b1eb40cc661e3a65d992b18c33a359
+
+    [TestMethod, ContextDataSource]
+    public async Task FindJobByHashcode_ReturnsJobs(InvocationContext context)
+    {
+        // Arrange
+        var action = new JobActions(context);
+        var projectId = new ProjectIdentifier { ProjectId = "2f5078602" };
+        var request = new FindJobByHashcodeRequest
+        {
+            Hashcode = "a1b1eb40cc661e3a65d992b18c33a359"
+        };
+
+        // Act
+        var response = await action.FindJobByHashcode(projectId, request);
+
+        // Assert
+        PrintResult(response);
+        Assert.IsNotNull(response);
+    }
 }

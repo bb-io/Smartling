@@ -151,6 +151,39 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
         return new SearchJobsResponse { Jobs = jobs, TotalCount = jobs is null ? 0 : jobs.Count()};
     }
 
+    [Action("Find job by hashcode", Description = "Find the first job that contains the specified hashcode, optionally filtered by language.")]
+    public async Task<JobDto> FindJobByHashcode(
+        [ActionParameter] ProjectIdentifier project,
+        [ActionParameter] FindJobByHashcodeRequest input)
+    {
+        string projectId = await GetProjectId(project.ProjectId);
+
+        var request = new SmartlingRequest(
+            $"/jobs-api/v3/projects/{projectId}/jobs/find-jobs-by-strings",
+            Method.Post
+        );
+        request.AddJsonBody(new
+        {
+            hashcodes = new[] { input.Hashcode },
+            localeIds = string.IsNullOrEmpty(input.Language) ? Array.Empty<string>() : new[] { input.Language }
+        });
+
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<FindJobByHashcodeItemDto>>>(request);
+        var jobMatch = response.Response.Data.Items.FirstOrDefault();
+
+        if (jobMatch is null)
+            throw new PluginApplicationException("No job found for the specified hashcode and language.");
+
+        var jobRequest = new SmartlingRequest(
+            $"/jobs-api/v3/projects/{projectId}/jobs/{jobMatch.TranslationJobUid}",
+            Method.Get
+        );
+        var jobResponse = await Client.ExecuteWithErrorHandling<ResponseWrapper<JobDto>>(jobRequest);
+        var job = jobResponse.Response.Data;
+        job.ProjectId = projectId;
+        return job;
+    }
+
     #endregion
 
     #region Post
