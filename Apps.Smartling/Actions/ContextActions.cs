@@ -150,6 +150,33 @@ public class ContextActions(InvocationContext invocationContext, IFileManagement
         }
     }
 
+    [Action("Link context to string", Description = "Link context to string")]
+    public async Task<ResponseWrapper<LinkContextResponseDto>> LinkContextToString(
+        [ActionParameter] ProjectIdentifier project,
+        [ActionParameter] SimpleLinkContextRequest request)
+    {
+        string projectId = await GetProjectId(project.ProjectId);
+
+        var apiRequest = new SmartlingRequest($"/context-api/v2/projects/{projectId}/bindings", Method.Post);
+
+        var body = new
+        {
+            bindings = new[]
+            {
+                    new
+                    {
+                        contextUid = request.ContextUid,
+                        stringHashcode = request.StringHashcode
+                    }
+                }
+        };
+
+        apiRequest.AddJsonBody(body);
+
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<LinkContextResponseDto>>(apiRequest);
+        return response;
+    }
+    
     private static object? BuildMatchParams(AddProjectContextRequest request)
     {
         bool hasJobUid = !string.IsNullOrEmpty(request.TranslationJobUid);
@@ -179,32 +206,5 @@ public class ContextActions(InvocationContext invocationContext, IFileManagement
             contentFileUri = request.ContentFileUri,
             overrideContextOlderThanDays = request.OverrideContextOlderThanDays
         };
-    }
-
-    [Action("Link context to string", Description = "Link context to string")]
-    public async Task<ResponseWrapper<LinkContextResponseDto>> LinkContextToString(
-        [ActionParameter] ProjectIdentifier project,
-        [ActionParameter] SimpleLinkContextRequest request)
-    {
-        string projectId = await GetProjectId(project.ProjectId);
-
-        var apiRequest = new SmartlingRequest($"/context-api/v2/projects/{projectId}/bindings", Method.Post);
-
-        var body = new
-        {
-            bindings = new[]
-            {
-                    new
-                    {
-                        contextUid = request.ContextUid,
-                        stringHashcode = request.StringHashcode
-                    }
-                }
-        };
-
-        apiRequest.AddJsonBody(body);
-
-        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<LinkContextResponseDto>>(apiRequest);
-        return response;
     }
 }
