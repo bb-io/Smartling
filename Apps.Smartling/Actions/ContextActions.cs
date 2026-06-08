@@ -11,6 +11,7 @@ using Apps.Smartling.Models.Dtos.Contexts;
 using Blackbird.Applications.Sdk.Common.Files;
 using Apps.Smartling.Models.Responses.Context;
 using Apps.Smartling.Models.Identifiers;
+using System.Text.Json;
 
 namespace Apps.Smartling.Actions;
 
@@ -117,6 +118,10 @@ public class ContextActions(InvocationContext invocationContext, IFileManagement
 
         if (request.ContextMatching == true)
         {
+            var matchParams = BuildMatchParams(request);
+            if (matchParams != null)
+                uploadRequest.AddParameter("matchParams", JsonSerializer.Serialize(matchParams, new JsonSerializerOptions { DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull }));
+
             var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<UploadAndMatchDto>>(uploadRequest);
 
             return new ResponseWrapper<UploadContextResponseDto>(
@@ -170,5 +175,36 @@ public class ContextActions(InvocationContext invocationContext, IFileManagement
 
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<LinkContextResponseDto>>(apiRequest);
         return response;
+    }
+    
+    private static object? BuildMatchParams(AddProjectContextRequest request)
+    {
+        bool hasJobUid = !string.IsNullOrEmpty(request.TranslationJobUid);
+        bool hasHashcodes = request.StringHashcodes?.Any() == true;
+        bool hasFileUri = !string.IsNullOrEmpty(request.ContentFileUri);
+        bool hasOverride = request.OverrideContextOlderThanDays.HasValue;
+
+        if (!hasJobUid && !hasHashcodes && !hasFileUri && !hasOverride)
+            return null;
+
+        if (hasJobUid)
+            return new
+            {
+                translationJobUids = new[] { request.TranslationJobUid },
+                overrideContextOlderThanDays = request.OverrideContextOlderThanDays
+            };
+
+        if (hasHashcodes)
+            return new
+            {
+                stringHashcodes = request.StringHashcodes,
+                overrideContextOlderThanDays = request.OverrideContextOlderThanDays
+            };
+
+        return new
+        {
+            contentFileUri = request.ContentFileUri,
+            overrideContextOlderThanDays = request.OverrideContextOlderThanDays
+        };
     }
 }
