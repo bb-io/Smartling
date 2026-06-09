@@ -44,7 +44,7 @@ public class StringActions(InvocationContext invocationContext) : SmartlingInvoc
             offset += limitPerRequest;
         } while (response.Response.Data.TotalCount == limitPerRequest);
 
-        return new(strings);
+        return new ListSourceStringsResponse(strings);
     }
 
     [Action("Get source string by hashcode", Description = "Retrieve a single source string with a specified hashcode.")]
