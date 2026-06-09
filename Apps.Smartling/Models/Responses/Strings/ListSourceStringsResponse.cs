@@ -3,9 +3,16 @@ using Blackbird.Applications.Sdk.Common;
 
 namespace Apps.Smartling.Models.Responses.Strings;
 
-public record ListSourceStringsResponse(
-    IEnumerable<SourceStringDto> Strings,
+public class ListSourceStringsResponse
+{
+    public IEnumerable<SourceStringDto> Strings { get; set; }
 
     [Display("String hashcodes")]
-    IEnumerable<string> StringHashcodes
-);
+    public IEnumerable<string> StringHashcodes { get; set; }
+
+    public ListSourceStringsResponse(IEnumerable<SourceStringDto> strings)
+    {
+        Strings = strings;
+        StringHashcodes = strings.Select(x => x.Hashcode).ToList();
+    }
+}
