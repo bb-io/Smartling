@@ -372,7 +372,7 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
         {
             jobName = input.JobName ?? job.JobName,
             description = input.Description ?? job.Description,
-            dueDate = input.DueDate ?? job.DueDate,
+            dueDate = (input.DueDate ?? job.DueDate)?.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssK"),
             referenceNumber = input.ReferenceNumber ?? job.ReferenceNumber,
             callbackUrl = input.CallbackUrl ?? job.CallbackUrl,
             callbackMethod = input.CallbackMethod ?? job.CallbackMethod
