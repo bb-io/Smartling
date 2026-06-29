@@ -9,17 +9,16 @@ namespace Tests.Smartling;
 public class Validator : TestBase
 {
     [TestMethod, ContextDataSource]
-    public async Task ValidatesCorrectConnection()
+    public async Task ValidatesCorrectConnection(Blackbird.Applications.Sdk.Common.Invocation.InvocationContext context)
     {
         // Arrange
         var validator = new ConnectionValidator();
 
         // Act
-        var tasks = CredsGroups.Select(x => validator.ValidateConnection(x, CancellationToken.None).AsTask());
-        var results = await Task.WhenAll(tasks);
+        var result = await validator.ValidateConnection(context.AuthenticationCredentialsProviders, CancellationToken.None);
 
         // Assert
-        Assert.IsTrue(results.All(x => x.IsValid));
+        Assert.IsTrue(result.IsValid);
     }
 
     [TestMethod]

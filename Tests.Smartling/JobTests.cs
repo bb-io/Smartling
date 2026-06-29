@@ -66,6 +66,21 @@ public class JobTests : TestBaseMultipleConnections
     }
 
     [TestMethod, ContextDataSource]
+    public async Task GetJobWordCount_IsSuccess(InvocationContext context)
+    {
+        // Arrange
+        var action = new JobActions(context);
+        var job = new JobIdentifier { TranslationJobUid = "bpvwktxiodpl" };
+
+        // Act
+        var response = await action.GetJobWordCount(job, new Apps.Smartling.Models.Requests.DatesOptionalRequest {  });
+
+        // Assert
+        PrintResult(response);
+        Assert.IsNotNull(response);
+    }
+
+    [TestMethod, ContextDataSource]
     public async Task SearchJobs_ReturnsJobs(InvocationContext context)
     {
         // Arrange
