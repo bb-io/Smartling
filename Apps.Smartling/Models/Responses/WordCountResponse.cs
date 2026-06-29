@@ -15,71 +15,54 @@ public class WordCountResponse
     public double TotalWeightedWordCount { get; set; }
 
     [Display("Fuzzy tier (0 - 84.9%)")]
-    public WordFuzzyTierCountResponse FuzzyTier84 { get; set; }
+    public WordFuzzyTierCountResponse FuzzyTier84 { get; set; } = CreateEmptyBucket("0 - 84.9%");
     
     [Display("Fuzzy tier (85 - 94.9%)")]
-    public WordFuzzyTierCountResponse FuzzyTier94 { get; set; }
+    public WordFuzzyTierCountResponse FuzzyTier94 { get; set; } = CreateEmptyBucket("85 - 94.9%");
     
     [Display("Fuzzy tier (95 - 99.9%)")]
-    public WordFuzzyTierCountResponse FuzzyTier99 { get; set; }
+    public WordFuzzyTierCountResponse FuzzyTier99 { get; set; } = CreateEmptyBucket("95 - 99.9%");
     
     [Display("Fuzzy tier (100%)")]
-    public WordFuzzyTierCountResponse FuzzyTier100 { get; set; }
+    public WordFuzzyTierCountResponse FuzzyTier100 { get; set; } = CreateEmptyBucket("100%");
     
     [Display("Fuzzy tier (Repetition)")]
-    public WordFuzzyTierCountResponse FuzzyTierRepetition { get; set; }
+    public WordFuzzyTierCountResponse FuzzyTierRepetition { get; set; } = CreateEmptyBucket("Repetition");
 
     public static WordCountResponse CreateFromDtos(IEnumerable<WordCountDto> dtos)
     {
         var response = new WordCountResponse();
-        foreach (var dto in dtos)
+
+        foreach (var groupedDtos in dtos.GroupBy(dto => NormalizeFuzzyTier(dto.FuzzyTier)))
         {
-            switch (dto.FuzzyTier)
+            var fuzzyTier = groupedDtos.Key;
+            if (fuzzyTier is null)
+                continue;
+
+            var bucket = new WordFuzzyTierCountResponse
+            {
+                FuzzyTier = fuzzyTier,
+                WordCount = groupedDtos.Sum(dto => dto.WordCount),
+                CharacterCount = groupedDtos.Sum(dto => dto.CharacterCount),
+                WeightedWordCount = groupedDtos.Sum(dto => dto.WeightedWordCount)
+            };
+
+            switch (fuzzyTier)
             {
                 case "0 - 84.9%":
-                    response.FuzzyTier84 = new WordFuzzyTierCountResponse
-                    {
-                        FuzzyTier = dto.FuzzyTier,
-                        WordCount = dto.WordCount,
-                        CharacterCount = dto.CharacterCount,
-                        WeightedWordCount = dto.WeightedWordCount
-                    };
+                    response.FuzzyTier84 = bucket;
                     break;
                 case "85 - 94.9%":
-                    response.FuzzyTier94 = new WordFuzzyTierCountResponse
-                    {
-                        FuzzyTier = dto.FuzzyTier,
-                        WordCount = dto.WordCount,
-                        CharacterCount = dto.CharacterCount,
-                        WeightedWordCount = dto.WeightedWordCount
-                    };
+                    response.FuzzyTier94 = bucket;
                     break;
                 case "95 - 99.9%":
-                    response.FuzzyTier99 = new WordFuzzyTierCountResponse
-                    {
-                        FuzzyTier = dto.FuzzyTier,
-                        WordCount = dto.WordCount,
-                        CharacterCount = dto.CharacterCount,
-                        WeightedWordCount = dto.WeightedWordCount
-                    };
+                    response.FuzzyTier99 = bucket;
                     break;
                 case "100%":
-                    response.FuzzyTier100 = new WordFuzzyTierCountResponse
-                    {
-                        FuzzyTier = dto.FuzzyTier,
-                        WordCount = dto.WordCount,
-                        CharacterCount = dto.CharacterCount,
-                        WeightedWordCount = dto.WeightedWordCount
-                    };
+                    response.FuzzyTier100 = bucket;
                     break;
                 case "Repetition":
-                    response.FuzzyTierRepetition = new WordFuzzyTierCountResponse
-                    {
-                        FuzzyTier = dto.FuzzyTier,
-                        WordCount = dto.WordCount,
-                        CharacterCount = dto.CharacterCount,
-                        WeightedWordCount = dto.WeightedWordCount
-                    };
+                    response.FuzzyTierRepetition = bucket;
                     break;
             }
         }
@@ -90,6 +73,24 @@ public class WordCountResponse
 
         return response;
     }
+
+    private static string? NormalizeFuzzyTier(string fuzzyTier) => fuzzyTier switch
+    {
+        "0 - 49.9%" or "50 - 74.9%" or "75 - 84.9%" or "0 - 84.9%" => "0 - 84.9%",
+        "85 - 94.9%" => "85 - 94.9%",
+        "95 - 99.9%" => "95 - 99.9%",
+        "100%" => "100%",
+        "Repetition" => "Repetition",
+        _ => null
+    };
+
+    private static WordFuzzyTierCountResponse CreateEmptyBucket(string fuzzyTier) => new()
+    {
+        FuzzyTier = fuzzyTier,
+        WordCount = 0,
+        CharacterCount = 0,
+        WeightedWordCount = 0
+    };
 }
 
 public class WordFuzzyTierCountResponse
