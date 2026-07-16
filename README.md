@@ -85,6 +85,13 @@ Navigate to apps and search for Smartling. If you cannot find Smartling then cli
 
 **Note**: A string added with **Add string to project** action can be authorized by a content owner in the Smartling Dashboard. Another way to authorize the string is to add it to a job with **Add string to job** action and then authorize the job with **Authorize job** action.
 
+### Tags
+
+- **Add tags to strings by hashcode** adds one or more tags to one or more strings.
+- **Remove tags from strings by hashcode** removes specified tags from one or more strings.
+- **Remove all tags from strings by hashcode** removes all tags from one or more strings.
+- **Get all tags for strings by hashcode** retrieves tags linked to one or more strings.
+
 ### Issues
 
 - **Get issue** retrieves detailed information about a single issue.
@@ -137,7 +144,6 @@ Navigate to apps and search for Smartling. If you cannot find Smartling then cli
 
 ## Missing features
 
-- Tags
 - Translation quality checks
 - File Machine Translations
 - Custom fields
