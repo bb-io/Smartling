@@ -1,11 +1,16 @@
 using System.Net;
+using System.Collections;
+using System.Text;
 using Apps.Smartling.Callbacks.Handlers;
+using Apps.Smartling.Callbacks.Models.Payload.Files;
 using Apps.Smartling.Callbacks.Models.Payload.Issues;
 using Apps.Smartling.Callbacks.Models.Payload.Jobs;
 using Apps.Smartling.Callbacks.Models.Payload.Strings;
 using Apps.Smartling.Models.Identifiers;
+using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Webhooks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Apps.Smartling.Callbacks;
 
@@ -248,6 +253,41 @@ public class CallbackList
         return result;
     }
 
+    [Webhook("On file published (manual)",
+        Description = "This manual event is triggered when all authorized content in a file reaches the Published workflow step in a locale.")]
+    public async Task<WebhookResponse<FilePublishedPayload>> OnFilePublishedManual(
+        WebhookRequest request,
+        [WebhookParameter] ProjectIdentifier projectIdentifier,
+        [WebhookParameter] TargetLocaleOptionalIdentifier targetLocaleIdentifier,
+        [WebhookParameter] SourceFileOptionalIdentifier sourceFileOptionalIdentifier,
+        [WebhookParameter] [Display("Job name contains")] string? jobNameContains)
+    {
+        var result = HandleFilePublishedCallback(request);
+
+        if (!string.Equals(result.Result?.PublishStatus, "published", StringComparison.OrdinalIgnoreCase))
+            return GetPreflightResponse<FilePublishedPayload>();
+
+        if (!string.IsNullOrWhiteSpace(targetLocaleIdentifier.TargetLocaleId) &&
+            !string.Equals(targetLocaleIdentifier.TargetLocaleId, result.Result?.Locale, StringComparison.OrdinalIgnoreCase))
+        {
+            return GetPreflightResponse<FilePublishedPayload>();
+        }
+
+        if (!string.IsNullOrWhiteSpace(sourceFileOptionalIdentifier.FileUri) &&
+            !string.Equals(sourceFileOptionalIdentifier.FileUri, result.Result?.FileUri, StringComparison.OrdinalIgnoreCase))
+        {
+            return GetPreflightResponse<FilePublishedPayload>();
+        }
+
+        if (!string.IsNullOrWhiteSpace(jobNameContains))
+        {
+            if (!ContainsFormattingIndifferent(result.Result?.JobName, jobNameContains))
+                return GetPreflightResponse<FilePublishedPayload>();
+        }
+
+        return result;
+    }
+
     [Webhook("On translation issue comment created (manual)",
         Description = "This manual event is triggered when a comment is added to a translation issue.")]
     public async Task<WebhookResponse<TranslationIssueCommentCreatedPayload>> OnTranslationIssueCommentCreatedManual(
@@ -295,4 +335,159 @@ public class CallbackList
             ReceivedWebhookRequestType = WebhookRequestType.Preflight
         };
     }
+
+    private WebhookResponse<FilePublishedPayload> HandleFilePublishedCallback(WebhookRequest request)
+    {
+        var jsonPayload = ParseJsonPayload(request.Body?.ToString());
+        var queryParameters = ExtractQueryParameters(request);
+
+        return new WebhookResponse<FilePublishedPayload>
+        {
+            HttpResponseMessage = new HttpResponseMessage(statusCode: HttpStatusCode.OK),
+            Result = new FilePublishedPayload
+            {
+                Locale = GetJsonValue(jsonPayload, "file.publishedLocale.localeId")
+                         ?? GetJsonValue(jsonPayload, "publishedLocale.localeId")
+                         ?? GetJsonValue(jsonPayload, "locale")
+                         ?? GetQueryValue(queryParameters, "locale"),
+                PublishStatus = GetJsonValue(jsonPayload, "publishStatus")
+                                ?? GetPublishStatusFromEventType(jsonPayload)
+                                ?? GetQueryValue(queryParameters, "publishStatus"),
+                FileUri = GetJsonValue(jsonPayload, "file.fileUri")
+                          ?? GetJsonValue(jsonPayload, "fileUri")
+                          ?? GetQueryValue(queryParameters, "fileUri"),
+                Timestamp = GetJsonValue(jsonPayload, "file.publishDate")
+                            ?? GetJsonValue(jsonPayload, "publishDate")
+                            ?? GetQueryValue(queryParameters, "ts"),
+                JobName = GetJsonValue(jsonPayload, "job.jobName")
+                          ?? GetJsonValue(jsonPayload, "translationJob.jobName")
+                          ?? GetJsonValue(jsonPayload, "translationJob.name")
+                          ?? GetJsonValue(jsonPayload, "jobName")
+            }
+        };
+    }
+
+    private static bool ContainsFormattingIndifferent(string? value, string? searchValue)
+    {
+        var normalizedValue = NormalizeForContains(value);
+        var normalizedSearchValue = NormalizeForContains(searchValue);
+
+        if (string.IsNullOrEmpty(normalizedValue) || string.IsNullOrEmpty(normalizedSearchValue))
+            return false;
+
+        return normalizedValue.Contains(normalizedSearchValue, StringComparison.Ordinal);
+    }
+
+    private static string NormalizeForContains(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        var builder = new StringBuilder(value.Length);
+        foreach (var character in value)
+        {
+            if (char.IsLetterOrDigit(character))
+                builder.Append(char.ToLowerInvariant(character));
+        }
+
+        return builder.ToString();
+    }
+
+    private static Dictionary<string, string> ExtractQueryParameters(WebhookRequest request)
+    {
+        var queryParameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        MergeValueIntoQueryParameters(request.Body?.ToString(), queryParameters);
+        MergeValueIntoQueryParameters(TryGetRequestPropertyValue(request, "Url"), queryParameters);
+        MergeValueIntoQueryParameters(TryGetRequestPropertyValue(request, "RequestUri"), queryParameters);
+        MergeValueIntoQueryParameters(TryGetRequestPropertyValue(request, "Query"), queryParameters);
+
+        return queryParameters;
+    }
+
+    private static JObject? ParseJsonPayload(string? rawBody)
+    {
+        if (string.IsNullOrWhiteSpace(rawBody))
+            return null;
+
+        var trimmedBody = rawBody.Trim();
+        if (!trimmedBody.StartsWith("{"))
+            return null;
+
+        try
+        {
+            return JObject.Parse(trimmedBody);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string? GetJsonValue(JObject? payload, string jsonPath)
+        => payload?.SelectToken(jsonPath)?.Value<string>();
+
+    private static string? GetPublishStatusFromEventType(JObject? payload)
+    {
+        var eventType = payload?.SelectToken("eventType")?.Value<string>();
+        return string.Equals(eventType, "file.published", StringComparison.OrdinalIgnoreCase)
+            ? "published"
+            : null;
+    }
+
+    private static string? TryGetRequestPropertyValue(WebhookRequest request, string propertyName)
+    {
+        var property = request.GetType().GetProperty(propertyName);
+        if (property is null)
+            return null;
+
+        var value = property.GetValue(request);
+        return value switch
+        {
+            null => null,
+            Uri uri => uri.ToString(),
+            string stringValue => stringValue,
+            IDictionary dictionary => string.Join("&", dictionary.Keys
+                .Cast<object>()
+                .Select(key => $"{key}={dictionary[key]}")),
+            _ => value.ToString()
+        };
+    }
+
+    private static void MergeValueIntoQueryParameters(string? rawValue, IDictionary<string, string> queryParameters)
+    {
+        if (string.IsNullOrWhiteSpace(rawValue))
+            return;
+
+        if (Uri.TryCreate(rawValue, UriKind.Absolute, out var absoluteUri))
+        {
+            MergeQueryString(absoluteUri.Query, queryParameters);
+            return;
+        }
+
+        var queryCandidate = rawValue.StartsWith('?') ? rawValue : rawValue.Contains('=') ? rawValue : string.Empty;
+        if (!string.IsNullOrEmpty(queryCandidate))
+            MergeQueryString(queryCandidate, queryParameters);
+    }
+
+    private static void MergeQueryString(string queryString, IDictionary<string, string> queryParameters)
+    {
+        if (string.IsNullOrWhiteSpace(queryString))
+            return;
+
+        var trimmedQuery = queryString.TrimStart('?');
+        foreach (var pair in trimmedQuery.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var pairParts = pair.Split('=', 2);
+            var key = Uri.UnescapeDataString(pairParts[0]);
+            if (string.IsNullOrWhiteSpace(key))
+                continue;
+
+            var value = pairParts.Length > 1 ? Uri.UnescapeDataString(pairParts[1]) : string.Empty;
+            queryParameters[key] = value;
+        }
+    }
+
+    private static string? GetQueryValue(IReadOnlyDictionary<string, string> queryParameters, string key)
+        => queryParameters.TryGetValue(key, out var value) ? value : null;
 }

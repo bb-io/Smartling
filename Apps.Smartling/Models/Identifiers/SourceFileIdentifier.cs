@@ -10,3 +10,10 @@ public class SourceFileIdentifier
     [DataSource(typeof(FileDataSourceHandler))]
     public string FileUri { get; set; }
 }
+
+public class SourceFileOptionalIdentifier
+{
+    [Display("Source file URI")]
+    [DataSource(typeof(FileDataSourceHandler))]
+    public string? FileUri { get; set; }
+}
