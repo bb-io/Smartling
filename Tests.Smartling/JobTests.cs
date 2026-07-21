@@ -73,7 +73,7 @@ public class JobTests : TestBaseMultipleConnections
         var job = new JobIdentifier { TranslationJobUid = "1wkts2yawnua" };
 
         // Act
-        var response = await action.GetJobWordCount(job, new Apps.Smartling.Models.Requests.DatesOptionalRequest {  });
+        var response = await action.GetJobWordCount(job, new GetJobWordCountRequest { });
 
         // Assert
         PrintResult(response);

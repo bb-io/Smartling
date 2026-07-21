@@ -51,13 +51,13 @@ Navigate to apps and search for Smartling. If you cannot find Smartling then cli
 - **Cancel job** cancels a job. All content within the job will be removed from the job and the content will be unauthorized.
 - **Update job** updates the attributes of the job, such as job name, description, due date, and reference number. Specify only attributes that need to be updated. Job can be edited only in _Draft (DRAFT)_, _Awaiting Authorization (AWAITING_AUTHORIZATION)_, _In Progress (IN_PROGRESS)_, _Completed (COMPLETED)_ statuses. Leave the _Callback URL_ and _Callback method_ parameters unspecified if you intend to use **On job completed** and/or **On job cancelled** events.
 - **Delete job** deletes a job. Only job that is in _Cancelled (CANCELLED)_ status can be deleted.
-- **Get job word count** retrieves the word count for a job. The word count is calculated based on the content in the job.
+- **Get job word count** retrieves the word count for a job. The word count is calculated based on the content in the job. You can optionally filter by workflow step types.
 - **Modify translation job schedule** modifies translation job schedule
 
 ### Job files
 
-- **Upload source file to job** adds all non-published strings from a file to a job. The file will be added for all locales of the job if _Target locales_ parameter is not specified.
-- **Upload file to project** Uploads original source content to project.
+- **Upload source file to job** adds all non-published strings from a file to a job. The file will be added for all locales of the job if _Target locales_ parameter is not specified. You can optionally provide a _Callback URL_ for the file upload endpoint.
+- **Upload file to project** Uploads original source content to project. You can optionally provide a _Callback URL_ for the file upload endpoint.
 - **Link uploaded file to job** adds all non-published strings from a file that has already been uplaoded to the project to the specified job. The file will be added for all locales of the job if _Target locales_ parameter is not specified.
 - **List source files within job** lists all source files within a job.
 - **Download source file**.

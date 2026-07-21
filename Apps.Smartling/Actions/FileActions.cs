@@ -246,6 +246,8 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
         uploadFileRequest.AddFile("file", preparedUploadFile.FileBytes, fileUri);
         uploadFileRequest.AddParameter("fileUri", fileUri);
         uploadFileRequest.AddParameter("fileType", fileType);
+        if (!string.IsNullOrEmpty(FileInput?.CallbackUrl))
+            uploadFileRequest.AddParameter("callbackUrl", FileInput.CallbackUrl);
         if (FileInput != null && FileInput.Directives != null && FileInput.Directives.Any()
             && FileInput.DirectiveValues != null && FileInput.DirectiveValues.Any())
         {
@@ -333,6 +335,8 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
         uploadFileRequest.AddFile("file", preparedUploadFile.FileBytes, fileUri);
         uploadFileRequest.AddParameter("fileUri", fileUri);
         uploadFileRequest.AddParameter("fileType", fileType);
+        if (!string.IsNullOrEmpty(FileInput?.CallbackUrl))
+            uploadFileRequest.AddParameter("callbackUrl", FileInput.CallbackUrl);
         if (FileInput != null && FileInput.Directives != null && FileInput.Directives.Any()
            && FileInput.DirectiveValues != null && FileInput.DirectiveValues.Any())
         {

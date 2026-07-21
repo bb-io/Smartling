@@ -1,21 +1,23 @@
-﻿using Apps.Smartling.DataSourceHandlers.EnumHandlers;
+using Apps.Smartling.DataSourceHandlers.EnumHandlers;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Dictionaries;
 
-namespace Apps.Smartling.Models.Requests.Files
+namespace Apps.Smartling.Models.Requests.Files;
+
+public class fileUploadRequest
 {
-    public class fileUploadRequest
-    {
-        [Display("File type")]
-        [StaticDataSource(typeof(FileTypeDataSourceHandler))]
-        public string? Type {get; set;}
+    [Display("File type")]
+    [StaticDataSource(typeof(FileTypeDataSourceHandler))]
+    public string? Type { get; set; }
 
-        [Display("Upload as XLIFF")]
-        public bool? UploadAsXliff { get; set; }
+    [Display("Callback URL")]
+    public string? CallbackUrl { get; set; }
 
-        public IEnumerable<string>? Directives { get; set; }
+    [Display("Upload as XLIFF")]
+    public bool? UploadAsXliff { get; set; }
 
-        [Display("Directive values")]
-        public IEnumerable<string>? DirectiveValues { get; set; }
-    }
+    public IEnumerable<string>? Directives { get; set; }
+
+    [Display("Directive values")]
+    public IEnumerable<string>? DirectiveValues { get; set; }
 }
