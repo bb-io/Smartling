@@ -40,13 +40,17 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
     [Action("Get job word count", Description = "Get the word count of a job.")]
     public async Task<WordCountResponse> GetJobWordCount(
         [ActionParameter] JobIdentifier jobIdentifier,
-        [ActionParameter] DatesOptionalRequest datesOptionalRequest)
+        [ActionParameter] GetJobWordCountRequest input)
     {
-        var startDate = datesOptionalRequest.StartDate?.ToString("yyyy-MM-dd") ?? DateTime.Parse("2024-01-01").ToString("yyyy-MM-dd");
-        var endDate = datesOptionalRequest.EndDate?.ToString("yyyy-MM-dd") ?? DateTime.Now.ToString("yyyy-MM-dd");
-        
-        var request = new SmartlingRequest($"/reports-api/v3/word-count?startDate={startDate}&endDate={endDate}&jobUids={jobIdentifier.TranslationJobUid}", 
-            Method.Get);
+        var startDate = input.StartDate?.ToString("yyyy-MM-dd") ?? DateTime.Parse("2024-01-01").ToString("yyyy-MM-dd");
+        var endDate = input.EndDate?.ToString("yyyy-MM-dd") ?? DateTime.Now.ToString("yyyy-MM-dd");
+
+        var request = new SmartlingRequest("/reports-api/v3/word-count", Method.Get);
+        request.AddQueryParameter("startDate", startDate);
+        request.AddQueryParameter("endDate", endDate);
+        request.AddQueryParameter("jobUids", jobIdentifier.TranslationJobUid);
+        if (input.WorkflowStepTypes != null && input.WorkflowStepTypes.Any())
+            request.AddQueryParameter("workflowStepTypes", string.Join(",", input.WorkflowStepTypes));
         
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<WordCountDto>>>(request);
         var wordCountResponse = WordCountResponse.CreateFromDtos(response.Response.Data.Items);
