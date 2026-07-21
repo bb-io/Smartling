@@ -1,24 +1,21 @@
 using System.Net;
 using System.Collections;
-using System.Reflection;
 using System.Text;
-using Apps.Smartling.Actions;
 using Apps.Smartling.Callbacks.Handlers;
 using Apps.Smartling.Callbacks.Models.Payload.Files;
 using Apps.Smartling.Callbacks.Models.Payload.Issues;
 using Apps.Smartling.Callbacks.Models.Payload.Jobs;
 using Apps.Smartling.Callbacks.Models.Payload.Strings;
 using Apps.Smartling.Models.Identifiers;
-using Apps.Smartling.Models.Requests.Jobs;
 using Blackbird.Applications.Sdk.Common;
-using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Common.Webhooks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Apps.Smartling.Callbacks;
 
 [WebhookList]
-public class CallbackList(InvocationContext invocationContext)
+public class CallbackList
 {
     #region Bridge callbacks
 
@@ -284,8 +281,7 @@ public class CallbackList(InvocationContext invocationContext)
 
         if (!string.IsNullOrWhiteSpace(jobNameContains))
         {
-            var matchesJob = await MatchesJobNameContainsAsync(projectIdentifier, result.Result?.FileUri, jobNameContains);
-            if (!matchesJob)
+            if (!ContainsFormattingIndifferent(result.Result?.JobName, jobNameContains))
                 return GetPreflightResponse<FilePublishedPayload>();
         }
 
@@ -342,6 +338,7 @@ public class CallbackList(InvocationContext invocationContext)
 
     private WebhookResponse<FilePublishedPayload> HandleFilePublishedCallback(WebhookRequest request)
     {
+        var jsonPayload = ParseJsonPayload(request.Body?.ToString());
         var queryParameters = ExtractQueryParameters(request);
 
         return new WebhookResponse<FilePublishedPayload>
@@ -349,40 +346,25 @@ public class CallbackList(InvocationContext invocationContext)
             HttpResponseMessage = new HttpResponseMessage(statusCode: HttpStatusCode.OK),
             Result = new FilePublishedPayload
             {
-                Locale = GetQueryValue(queryParameters, "locale"),
-                PublishStatus = GetQueryValue(queryParameters, "publishStatus"),
-                FileUri = GetQueryValue(queryParameters, "fileUri"),
-                Timestamp = GetQueryValue(queryParameters, "ts")
+                Locale = GetJsonValue(jsonPayload, "file.publishedLocale.localeId")
+                         ?? GetJsonValue(jsonPayload, "publishedLocale.localeId")
+                         ?? GetJsonValue(jsonPayload, "locale")
+                         ?? GetQueryValue(queryParameters, "locale"),
+                PublishStatus = GetJsonValue(jsonPayload, "publishStatus")
+                                ?? GetPublishStatusFromEventType(jsonPayload)
+                                ?? GetQueryValue(queryParameters, "publishStatus"),
+                FileUri = GetJsonValue(jsonPayload, "file.fileUri")
+                          ?? GetJsonValue(jsonPayload, "fileUri")
+                          ?? GetQueryValue(queryParameters, "fileUri"),
+                Timestamp = GetJsonValue(jsonPayload, "file.publishDate")
+                            ?? GetJsonValue(jsonPayload, "publishDate")
+                            ?? GetQueryValue(queryParameters, "ts"),
+                JobName = GetJsonValue(jsonPayload, "job.jobName")
+                          ?? GetJsonValue(jsonPayload, "translationJob.jobName")
+                          ?? GetJsonValue(jsonPayload, "translationJob.name")
+                          ?? GetJsonValue(jsonPayload, "jobName")
             }
         };
-    }
-
-    private async Task<bool> MatchesJobNameContainsAsync(
-        ProjectIdentifier projectIdentifier,
-        string? fileUri,
-        string jobNameContains)
-    {
-        if (string.IsNullOrWhiteSpace(projectIdentifier.ProjectId) || string.IsNullOrWhiteSpace(fileUri))
-            return false;
-
-        var jobActions = new JobActions(invocationContext);
-        var fileActions = new FileActions(invocationContext, null!);
-
-        var jobsResponse = await jobActions.SearchJobs(projectIdentifier, new SearchJobsRequest());
-        var matchingJobs = jobsResponse.Jobs
-            .Where(x => !string.IsNullOrWhiteSpace(x.TranslationJobUid) &&
-                        ContainsFormattingIndifferent(x.JobName, jobNameContains));
-
-        foreach (var job in matchingJobs)
-        {
-            var jobFiles = await fileActions.ListFilesWithinJob(projectIdentifier,
-                new JobIdentifier { TranslationJobUid = job.TranslationJobUid });
-
-            if (jobFiles.Files.Any(x => string.Equals(x.Uri, fileUri, StringComparison.OrdinalIgnoreCase)))
-                return true;
-        }
-
-        return false;
     }
 
     private static bool ContainsFormattingIndifferent(string? value, string? searchValue)
@@ -416,32 +398,60 @@ public class CallbackList(InvocationContext invocationContext)
         var queryParameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         MergeValueIntoQueryParameters(request.Body?.ToString(), queryParameters);
-
-        foreach (var property in request.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
-        {
-            var value = property.GetValue(request);
-            if (value is null)
-                continue;
-
-            switch (value)
-            {
-                case Uri uri:
-                    MergeValueIntoQueryParameters(uri.Query, queryParameters);
-                    break;
-                case string stringValue:
-                    MergeValueIntoQueryParameters(stringValue, queryParameters);
-                    break;
-                case IDictionary dictionary:
-                    foreach (DictionaryEntry item in dictionary)
-                    {
-                        if (item.Key is not null && item.Value is not null)
-                            queryParameters[item.Key.ToString()!] = item.Value.ToString()!;
-                    }
-                    break;
-            }
-        }
+        MergeValueIntoQueryParameters(TryGetRequestPropertyValue(request, "Url"), queryParameters);
+        MergeValueIntoQueryParameters(TryGetRequestPropertyValue(request, "RequestUri"), queryParameters);
+        MergeValueIntoQueryParameters(TryGetRequestPropertyValue(request, "Query"), queryParameters);
 
         return queryParameters;
+    }
+
+    private static JObject? ParseJsonPayload(string? rawBody)
+    {
+        if (string.IsNullOrWhiteSpace(rawBody))
+            return null;
+
+        var trimmedBody = rawBody.Trim();
+        if (!trimmedBody.StartsWith("{"))
+            return null;
+
+        try
+        {
+            return JObject.Parse(trimmedBody);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string? GetJsonValue(JObject? payload, string jsonPath)
+        => payload?.SelectToken(jsonPath)?.Value<string>();
+
+    private static string? GetPublishStatusFromEventType(JObject? payload)
+    {
+        var eventType = payload?.SelectToken("eventType")?.Value<string>();
+        return string.Equals(eventType, "file.published", StringComparison.OrdinalIgnoreCase)
+            ? "published"
+            : null;
+    }
+
+    private static string? TryGetRequestPropertyValue(WebhookRequest request, string propertyName)
+    {
+        var property = request.GetType().GetProperty(propertyName);
+        if (property is null)
+            return null;
+
+        var value = property.GetValue(request);
+        return value switch
+        {
+            null => null,
+            Uri uri => uri.ToString(),
+            string stringValue => stringValue,
+            IDictionary dictionary => string.Join("&", dictionary.Keys
+                .Cast<object>()
+                .Select(key => $"{key}={dictionary[key]}")),
+            _ => value.ToString()
+        };
     }
 
     private static void MergeValueIntoQueryParameters(string? rawValue, IDictionary<string, string> queryParameters)

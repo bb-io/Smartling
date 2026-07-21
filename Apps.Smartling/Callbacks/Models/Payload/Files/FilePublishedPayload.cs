@@ -7,6 +7,9 @@ public class FilePublishedPayload
     [Display("Locale")]
     public string? Locale { get; set; }
 
+    [Display("Job name")]
+    public string? JobName { get; set; }
+
     [Display("Publish status")]
     public string? PublishStatus { get; set; }
 
