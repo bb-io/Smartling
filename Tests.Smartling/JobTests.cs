@@ -73,7 +73,10 @@ public class JobTests : TestBaseMultipleConnections
         var job = new JobIdentifier { TranslationJobUid = "1wkts2yawnua" };
 
         // Act
-        var response = await action.GetJobWordCount(job, new GetJobWordCountRequest { });
+        var response = await action.GetJobWordCount(job, new GetJobWordCountRequest
+        {
+            WorkflowStepTypes = ["Translation"]
+        });
 
         // Assert
         PrintResult(response);
