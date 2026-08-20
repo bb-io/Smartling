@@ -130,6 +130,13 @@ Navigate to apps and search for Smartling. If you cannot find Smartling then cli
 - **Delete project context**.
 - **Download project context**.
 
+### Offline translations
+
+- **Create translation package** creates a new translation package for a given project and locale.
+- **Download translation package content** downloads an XLIFF file from a translation package.
+- **Download translation memory from translation package** downloads a TMX file from a translation package.
+- **Upload translated content** imports translated content from a file.
+
 ## Events
 
 - **On job cancelled** and **On job cancelled (manual)** are triggered when a job is cancelled.
@@ -142,6 +149,7 @@ Navigate to apps and search for Smartling. If you cannot find Smartling then cli
 - **On jobs authorized** and **On specific job authorized** are triggered when a job reaches the **IN_PROGRESS** status. The project-level event monitors all jobs in a project, while the specific job event monitors a single job provided as input.
 - **On jobs completed** and **On specific job completed** are triggered when a job reaches the **COMPLETED** status (the project-level event also considers **CLOSED** jobs). The project-level event monitors all jobs in a project, while the specific job event checks the status of a single job.
 - **On glossary entries added** is triggered when new glossary entries are created in a glossary, returning the entries added since the last polling cycle based on their creation date.
+- **On translation package generated** is triggered when a specific translation package finishes generating.
 
 ## Missing features
 
