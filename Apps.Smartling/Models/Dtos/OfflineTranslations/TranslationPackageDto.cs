@@ -1,4 +1,4 @@
-using Apps.Smartling.Models.Responses.OnlineTranslations.Api;
+using Apps.Smartling.Models.Responses.OfflineTranslations.Api;
 using Blackbird.Applications.Sdk.Common;
 
 namespace Apps.Smartling.Models.Dtos.OfflineTranslations;

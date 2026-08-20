@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace Apps.Smartling.Models.Responses.OnlineTranslations.Api;
+namespace Apps.Smartling.Models.Responses.OfflineTranslations.Api;
 
 public class TranslationImportError
 {

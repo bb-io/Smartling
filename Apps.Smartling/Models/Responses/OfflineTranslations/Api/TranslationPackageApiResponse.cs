@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace Apps.Smartling.Models.Responses.OnlineTranslations.Api;
+namespace Apps.Smartling.Models.Responses.OfflineTranslations.Api;
 
 public class TranslationPackageApiResponse
 {
@@ -8,5 +8,5 @@ public class TranslationPackageApiResponse
     public string TranslationPackageUid { get; set; } = string.Empty;
 
     [JsonProperty("links")]
-    public TranslationPackageLinks Links { get; set; } = null!;
+    public List<TranslationPackageLink> Links { get; set; } = [];
 }
