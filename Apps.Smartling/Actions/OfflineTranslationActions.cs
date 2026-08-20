@@ -14,6 +14,7 @@ using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
 using Blackbird.Applications.Sdk.Utils.Extensions.Files;
 using Blackbird.Applications.Sdk.Utils.Extensions.Http;
+using Blackbird.Applications.Sdk.Utils.Extensions.System;
 using Blackbird.Filters.Constants;
 using RestSharp;
 
@@ -40,7 +41,7 @@ public class OfflineTranslationActions(InvocationContext invocationContext, IFil
             { "translationJobUid", jobIdentifier.TranslationJobUid },
             { "generateTmx", createInput.GenerateTmx ?? false },
             { "generateTbx", createInput.GenerateTbx ?? false }
-        };
+        }.AllIsNotNull();
 
         var request = new SmartlingRequest(endpoint, Method.Post).WithJsonBody(body);
         var response = await Client.ExecuteWithErrorHandling<TranslationPackageApiResponse>(request);
@@ -129,22 +130,22 @@ public class OfflineTranslationActions(InvocationContext invocationContext, IFil
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ImportTranslationContentApiResponse>>(request);
 
         var importErrors = response.Response.Data.ImportErrors;
-        if (importErrors is not null && importErrors.Count != 0)
+        if (importErrors is null || importErrors.Count == 0) 
+            return new(response.Response.Data);
+        
+        List<string> errors = [];
+        foreach (var importError in importErrors)
         {
-            List<string> errors = [];
-            foreach (var importError in importErrors)
-            {
-                string unitId = importError.HashCode;
-                string unitErrors = string.Join(", ", importError.Messages ?? []);
-                errors.Add($"Unit {unitId}: {unitErrors}");
-            }
-
-            if (errors.Count != 0)
-            {
-                string errorMessages = string.Join("; ", errors);
-                InvocationContext.Logger?.LogError($"Some errors occured during import. {errorMessages}", []);
-            }
+            string unitId = importError.HashCode;
+            string unitErrors = string.Join(", ", importError.Messages ?? []);
+            errors.Add($"Unit {unitId}: {unitErrors}");
         }
+
+        if (errors.Count == 0) 
+            return new(response.Response.Data);
+        
+        string errorMessages = string.Join("; ", errors);
+        InvocationContext.Logger?.LogError($"Some errors occured during import. {errorMessages}", []);
 
         return new(response.Response.Data);
     }
