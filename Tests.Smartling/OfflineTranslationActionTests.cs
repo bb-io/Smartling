@@ -20,7 +20,7 @@ public class OfflineTranslationActionTests : TestBaseMultipleConnections
         var job = new JobOptionalIdentifier { };
         var input = new CreateTranslationPackageRequest
         {
-            
+            GenerateTmx = true
         };
 
         // Act
@@ -28,6 +28,38 @@ public class OfflineTranslationActionTests : TestBaseMultipleConnections
 
         // Assert
         PrintResult(result);
+        Assert.IsNotNull(result);
+    }
+
+    [TestMethod, ContextDataSource]
+    public async Task DownloadXliffFromPackage_IsSuccess(InvocationContext context)
+    {
+        // Arrange
+        var actions = new OfflineTranslationActions(context, FileManager);
+        var projectId = new ProjectIdentifier { };
+        var packageId = new TranslationPackageIdentifier { TranslationPackageUid = "50273b69" };
+
+        // Act
+        var result = await actions.DownloadXliffFromPackage(projectId, packageId);
+
+        // Assert
+        TestContext.Write(result.File.Name);
+        Assert.IsNotNull(result);
+    }
+
+    [TestMethod, ContextDataSource]
+    public async Task DownloadTmxFromPackage_IsSuccess(InvocationContext context)
+    {
+        // Arrange
+        var actions = new OfflineTranslationActions(context, FileManager);
+        var projectId = new ProjectIdentifier { };
+        var packageId = new TranslationPackageIdentifier { TranslationPackageUid = "50273b69" };
+
+        // Act
+        var result = await actions.DownloadTmxFromPackage(projectId, packageId);
+
+        // Assert
+        TestContext.Write(result.File.Name);
         Assert.IsNotNull(result);
     }
 }

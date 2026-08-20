@@ -69,8 +69,21 @@ public class OfflineTranslationActions(InvocationContext invocationContext, IFil
         [ActionParameter] TranslationPackageIdentifier packageIdentifier)
     {
         string projectId = await GetProjectId(projectIdentifier.ProjectId);
+        string packageUid = packageIdentifier.TranslationPackageUid;
         
-        var responseBytes = await DownloadContentBytes(projectId, packageIdentifier.TranslationPackageUid, "content");
+        byte[] responseBytes;
+        try
+        {
+            responseBytes = await DownloadContentBytes(projectId, packageUid, "tm");
+        }
+        catch (PluginApplicationException)
+        {
+            // Right now Smartling returns a status code 500 (not 404 :/ ) when the package does not have a TMX
+            throw new PluginApplicationException(
+                $"No translation memory is available for package '{packageUid}'. " +
+                $"It was most likely created without 'Include translation memory' enabled.");
+        }
+        
         using var fileStream = new MemoryStream(responseBytes);
         string fileName = $"{packageIdentifier.TranslationPackageUid}.tmx";
         
