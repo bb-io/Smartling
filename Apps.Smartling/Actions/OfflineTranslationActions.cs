@@ -92,7 +92,7 @@ public class OfflineTranslationActions(InvocationContext invocationContext, IFil
         
         string endpoint = $"/translations-api/v2/projects/{projectId}/locales/{localeIdentifier.TargetLocaleId}/content";
         var request = new SmartlingRequest(endpoint, Method.Post) { AlwaysMultipartFormData = true }
-            .AddFile(uploadInput.File.Name, fileBytes, uploadInput.File.Name)
+            .AddFile("file", fileBytes, uploadInput.File.Name)
             .AddParameter("submitContent", uploadInput.SubmitContent ?? false);
             
         if (!string.IsNullOrEmpty(uploadInput.WorkflowStepUid))

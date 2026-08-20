@@ -1,5 +1,7 @@
 using Apps.Smartling.Actions;
 using Apps.Smartling.Models.Identifiers;
+using Apps.Smartling.Models.Requests.OfflineTranslations;
+using Blackbird.Applications.Sdk.Common.Files;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Tests.Smartling.Base;
 
@@ -32,7 +34,7 @@ public class OfflineTranslationActionTests : TestBaseMultipleConnections
         // Arrange
         var actions = new OfflineTranslationActions(context, FileManager);
         var projectId = new ProjectIdentifier { };
-        var packageId = new TranslationPackageIdentifier { TranslationPackageUid = "50273b69" };
+        var packageId = new TranslationPackageIdentifier { TranslationPackageUid = "496cb150" };
 
         // Act
         var result = await actions.DownloadXliffFromPackage(projectId, packageId);
@@ -55,6 +57,26 @@ public class OfflineTranslationActionTests : TestBaseMultipleConnections
 
         // Assert
         TestContext.Write(result.File.Name);
+        Assert.IsNotNull(result);
+    }
+
+    [TestMethod, ContextDataSource]
+    public async Task UploadTranslatedContent_ReturnsWordcounts(InvocationContext context)
+    {
+        // Arrange
+        var actions = new OfflineTranslationActions(context, FileManager);
+        var projectId = new ProjectIdentifier { };
+        var localeId = new TargetLocaleIdentifier { TargetLocaleId = "uk-UA" };
+        var input = new UploadTranslatedContentRequest
+        {
+            File = new FileReference { Name = "test.xliff" }
+        };
+
+        // Act
+        var result = await actions.UploadTranslatedContent(projectId, localeId, input);
+
+        // Assert
+        PrintResult(result);
         Assert.IsNotNull(result);
     }
 }
