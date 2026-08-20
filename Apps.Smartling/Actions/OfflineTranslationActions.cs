@@ -32,20 +32,20 @@ public class OfflineTranslationActions(InvocationContext invocationContext, IFil
         [ActionParameter] JobOptionalIdentifier jobIdentifier,
         [ActionParameter] CreateTranslationPackageRequest createInput)
     {
-        string endpoint = 
-            $"translations-api/v2/projects/{projectIdentifier.ProjectId}/locales/{localeIdentifier.TargetLocaleId}/translation-packages";
-
+        string projectId = await GetProjectId(projectIdentifier.ProjectId);
+        
+        string endpoint = $"translations-api/v2/projects/{projectId}/locales/{localeIdentifier.TargetLocaleId}/translation-packages";
+        
         var body = new Dictionary<string, object?>
         {
             { "workflowStepUid", workflowStepIdentifier.WorkflowStepUid },
             { "translationJobUid", jobIdentifier.TranslationJobUid },
-            { "generateTmx", createInput.GenerateTmx ?? false },
-            { "generateTbx", createInput.GenerateTbx ?? false }
+            { "generateTmx", createInput.GenerateTmx ?? false }
         }.AllIsNotNull();
 
         var request = new SmartlingRequest(endpoint, Method.Post).WithJsonBody(body);
-        var response = await Client.ExecuteWithErrorHandling<TranslationPackageApiResponse>(request);
-        return new(response);
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<TranslationPackageApiResponse>>(request);
+        return new(response.Response.Data);
     }
 
     [Action("Download XLIFF from translation package", Description = "Download an XLIFF file from a translation package")]
@@ -75,36 +75,6 @@ public class OfflineTranslationActions(InvocationContext invocationContext, IFil
         string fileName = $"{packageIdentifier.TranslationPackageUid}.tmx";
         
         var file = await fileManagementClient.UploadAsync(fileStream, "application/x-tmx+xml", fileName);
-        return new FileWrapper { File = file };
-    }
-
-    [Action("Download glossary from translation package", Description = "Download a TBX file from a translation package")]
-    public async Task<FileWrapper> DownloadTbxFromPackage(
-        [ActionParameter] ProjectIdentifier projectIdentifier,
-        [ActionParameter] TranslationPackageIdentifier packageIdentifier)
-    {
-        string projectId = await GetProjectId(projectIdentifier.ProjectId);
-
-        string endpoint = $"/translations-api/v2/projects/{projectId}/translation-packages/{packageIdentifier.TranslationPackageUid}";
-        var packageRequest = new SmartlingRequest(endpoint, Method.Get);
-        var packageResponse = await Client.ExecuteWithErrorHandling<ResponseWrapper<TranslationPackageApiResponse>>(packageRequest);
-
-        string? tbxDownloadLink = packageResponse.Response.Data.Links.Glossary;
-        if (string.IsNullOrWhiteSpace(tbxDownloadLink))
-        {
-            throw new PluginMisconfigurationException(
-                "The glossary is not available for this package. Make sure it was created with " +
-                "'Include glossary (TBX)' enabled and that generation has finished");
-        }
-
-        var downloadRequest = new RestRequest(tbxDownloadLink);
-        var downloadResponse = await new RestClient().ExecuteAsync(downloadRequest);
-        if (downloadResponse.RawBytes is null)
-            throw new PluginApplicationException("The downloaded file is empty");
-        
-        using var fileStream = new MemoryStream(downloadResponse.RawBytes);
-        string fileName = $"{packageIdentifier.TranslationPackageUid}.tbx";
-        var file = await fileManagementClient.UploadAsync(fileStream, "application/x-tbx+xml", fileName);
         return new FileWrapper { File = file };
     }
 
