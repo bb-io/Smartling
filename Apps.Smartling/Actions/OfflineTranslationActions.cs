@@ -48,7 +48,7 @@ public class OfflineTranslationActions(InvocationContext invocationContext, IFil
         return new(response.Response.Data);
     }
 
-    [Action("Download XLIFF from translation package", Description = "Download an XLIFF file from a translation package")]
+    [Action("Download translation package content", Description = "Download an XLIFF file from a translation package")]
     public async Task<FileWrapper> DownloadXliffFromPackage(
         [ActionParameter] ProjectIdentifier projectIdentifier,
         [ActionParameter] TranslationPackageIdentifier packageIdentifier)
@@ -79,7 +79,7 @@ public class OfflineTranslationActions(InvocationContext invocationContext, IFil
         return new FileWrapper { File = file };
     }
 
-    [Action("Upload translated content", Description = "Import translated content")]
+    [Action("Upload translated content", Description = "Import translated content from a file")]
     public async Task<UploadTranslatedContentResponse> UploadTranslatedContent(
         [ActionParameter] ProjectIdentifier projectIdentifier,
         [ActionParameter] TargetLocaleIdentifier localeIdentifier,

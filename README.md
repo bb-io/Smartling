@@ -133,9 +133,9 @@ Navigate to apps and search for Smartling. If you cannot find Smartling then cli
 ### Offline translations
 
 - **Create translation package** creates a new translation package for a given project and locale.
-- **Download XLIFF from translation package** downloads an XLIFF file from a translation package.
+- **Download translation package content** downloads an XLIFF file from a translation package.
 - **Download translation memory from translation package** downloads a TMX file from a translation package.
-- **Upload translated content** imports translated content.
+- **Upload translated content** imports translated content from a file.
 
 ## Events
 
