@@ -29,8 +29,7 @@ public class OfflineTranslationActions(InvocationContext invocationContext, IFil
         [ActionParameter] ProjectIdentifier projectIdentifier,
         [ActionParameter] TargetLocaleIdentifier localeIdentifier,
         [ActionParameter] WorkflowStepIdentifier workflowStepIdentifier,
-        [ActionParameter] JobOptionalIdentifier jobIdentifier,
-        [ActionParameter] CreateTranslationPackageRequest createInput)
+        [ActionParameter] JobOptionalIdentifier jobIdentifier)
     {
         string projectId = await GetProjectId(projectIdentifier.ProjectId);
         
@@ -40,7 +39,8 @@ public class OfflineTranslationActions(InvocationContext invocationContext, IFil
         {
             { "workflowStepUid", workflowStepIdentifier.WorkflowStepUid },
             { "translationJobUid", jobIdentifier.TranslationJobUid },
-            { "generateTmx", createInput.GenerateTmx ?? false }
+            // The 'Get Translation Package Information' endpoint will throw 500 if a project was generated without TMX
+            { "generateTmx", true }
         }.AllIsNotNull();
 
         var request = new SmartlingRequest(endpoint, Method.Post).WithJsonBody(body);
@@ -71,19 +71,7 @@ public class OfflineTranslationActions(InvocationContext invocationContext, IFil
         string projectId = await GetProjectId(projectIdentifier.ProjectId);
         string packageUid = packageIdentifier.TranslationPackageUid;
         
-        byte[] responseBytes;
-        try
-        {
-            responseBytes = await DownloadContentBytes(projectId, packageUid, "tm");
-        }
-        catch (PluginApplicationException)
-        {
-            // Right now Smartling returns a status code 500 (not 404 :/ ) when the package does not have a TMX
-            throw new PluginApplicationException(
-                $"No translation memory is available for package '{packageUid}'. " +
-                $"It was most likely created without 'Include translation memory' enabled.");
-        }
-        
+        byte[] responseBytes = await DownloadContentBytes(projectId, packageUid, "tm");
         using var fileStream = new MemoryStream(responseBytes);
         string fileName = $"{packageIdentifier.TranslationPackageUid}.tmx";
         

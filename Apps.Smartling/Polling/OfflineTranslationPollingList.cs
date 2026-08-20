@@ -1,10 +1,11 @@
 using Apps.Smartling.Api;
+using Apps.Smartling.Constants;
 using Apps.Smartling.Models.Dtos.OfflineTranslations;
 using Apps.Smartling.Models.Identifiers;
 using Apps.Smartling.Models.Responses;
-using Apps.Smartling.Models.Responses.OnlineTranslations.Api;
+using Apps.Smartling.Models.Responses.OfflineTranslations.Api;
 using Apps.Smartling.Polling.Models;
-using Apps.Smartling.Polling.Models.Requests;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Common.Polling;
 using RestSharp;
@@ -18,38 +19,40 @@ public class OfflineTranslationPollingList(InvocationContext invocationContext) 
     public async Task<PollingEventResponse<TranslationPackageMemory, TranslationPackageDto>> OnTranslationPackageGenerated(
         PollingEventRequest<TranslationPackageMemory> request,
         [PollingEventParameter] ProjectIdentifier project,
-        [PollingEventParameter] TranslationPackageIdentifier packageIdentifier,
-        [PollingEventParameter] OnTranslationPackageGeneratedRequest input)
+        [PollingEventParameter] TranslationPackageIdentifier packageIdentifier)
     {
-        if (request.Memory is null)
-        {
-            return new PollingEventResponse<TranslationPackageMemory, TranslationPackageDto>
-            {
-                FlyBird = false,
-                Memory = new TranslationPackageMemory { Notified = false },
-                Result = null
-            };
-        }
+        var memory = request.Memory ?? new TranslationPackageMemory();
         
-        if (request.Memory.Notified)
+        if (memory.Notified)
             return DontFly(request);
         
         string projectId = await GetProjectId(project.ProjectId);
         
         string endpoint = $"/translations-api/v2/projects/{projectId}/translation-packages/{packageIdentifier.TranslationPackageUid}";
         var packageRequest = new SmartlingRequest(endpoint, Method.Get);
-        var packageResponse = await Client.ExecuteWithErrorHandling<ResponseWrapper<TranslationPackageApiResponse>>(packageRequest);
-
-        var responseData = packageResponse.Response.Data;
         
-        if (string.IsNullOrWhiteSpace(responseData.Links.Content))
-            return DontFly(request);    // Main XLIFF is not ready
-        
-        if (input.AlsoWaitForTbx is true && string.IsNullOrWhiteSpace(responseData.Links.Glossary) || 
-            input.AlsoWaitForTmx is true && string.IsNullOrWhiteSpace(responseData.Links.TranslationMemory))
+        TranslationPackageApiResponse? responseData;
+        try
+        {
+            // Can fail with 500
+            var packageResponse = await Client.ExecuteWithErrorHandling<ResponseWrapper<TranslationPackageApiResponse>>(packageRequest);
+            responseData = packageResponse.Response.Data;
+        }
+        catch (PluginApplicationException)
         {
             return DontFly(request);
         }
+
+        string? xliffLink = responseData.Links
+            .FirstOrDefault(x => string.Equals(x.Rel, TranslationPackageLinkRels.Xliff, StringComparison.OrdinalIgnoreCase))?
+            .Href;
+
+        string? tmLink = responseData.Links
+            .FirstOrDefault(x => string.Equals(x.Rel, TranslationPackageLinkRels.TranslationMemory, StringComparison.OrdinalIgnoreCase))?
+            .Href;
+        
+        if (string.IsNullOrWhiteSpace(xliffLink) && string.IsNullOrWhiteSpace(tmLink))
+            return DontFly(request);
 
         return new PollingEventResponse<TranslationPackageMemory, TranslationPackageDto>
         {

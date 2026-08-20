@@ -1,6 +1,5 @@
 using Apps.Smartling.Actions;
 using Apps.Smartling.Models.Identifiers;
-using Apps.Smartling.Models.Requests.OfflineTranslations;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Tests.Smartling.Base;
 
@@ -18,13 +17,9 @@ public class OfflineTranslationActionTests : TestBaseMultipleConnections
         var locale = new TargetLocaleIdentifier { TargetLocaleId = "uk-UA" };
         var workflowStep = new WorkflowStepIdentifier { WorkflowStepUid = "1dd3ff77c392" };
         var job = new JobOptionalIdentifier { };
-        var input = new CreateTranslationPackageRequest
-        {
-            GenerateTmx = true
-        };
 
         // Act
-        var result = await actions.CreateTranslationPackage(projectId, locale, workflowStep, job, input);
+        var result = await actions.CreateTranslationPackage(projectId, locale, workflowStep, job);
 
         // Assert
         PrintResult(result);
