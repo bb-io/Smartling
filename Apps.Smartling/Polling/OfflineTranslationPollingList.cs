@@ -51,7 +51,7 @@ public class OfflineTranslationPollingList(InvocationContext invocationContext) 
             .FirstOrDefault(x => string.Equals(x.Rel, TranslationPackageLinkRels.TranslationMemory, StringComparison.OrdinalIgnoreCase))?
             .Href;
         
-        if (string.IsNullOrWhiteSpace(xliffLink) && string.IsNullOrWhiteSpace(tmLink))
+        if (string.IsNullOrWhiteSpace(xliffLink) || string.IsNullOrWhiteSpace(tmLink))
             return DontFly(request);
 
         return new PollingEventResponse<TranslationPackageMemory, TranslationPackageDto>
