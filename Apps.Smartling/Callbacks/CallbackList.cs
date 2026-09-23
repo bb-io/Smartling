@@ -51,6 +51,25 @@ public class CallbackList
         return result;
     }
 
+    [Webhook("On job workflow step reached", typeof(JobWorkflowStepReachedCallbackHandler),
+        Description = "This event is triggered when all authorized content in a job for a locale reaches a workflow step.")]
+    public async Task<WebhookResponse<JobWorkflowStepReachedPayload>> OnJobWorkflowStepReached(
+        WebhookRequest request,
+        [WebhookParameter] ProjectIdentifier projectIdentifier,
+        [WebhookParameter] JobOptionalIdentifier jobOptionalIdentifier,
+        [WebhookParameter] TargetLocalesIdentifier targetLocalesIdentifier,
+        [WebhookParameter] WorkflowStepOptionalIdentifier workflowStepOptionalIdentifier)
+    {
+        var result = await HandleCallback<JobWorkflowStepReachedPayload>(request);
+        return MatchesJobWorkflowStepFilters(
+            result.Result,
+            jobOptionalIdentifier,
+            targetLocalesIdentifier,
+            workflowStepOptionalIdentifier)
+            ? result
+            : GetPreflightResponse<JobWorkflowStepReachedPayload>();
+    }
+
     [Webhook("On string translation published", typeof(StringPublishedCallbackHandler),
         Description = "This event is triggered when a string translation is published for a locale.")]
     public async Task<WebhookResponse<StringPublishedPayload>> OnStringPublished(
@@ -179,6 +198,25 @@ public class CallbackList
         }
 
         return result;
+    }
+
+    [Webhook("On job workflow step reached (manual)",
+        Description = "This manual event is triggered when all authorized content in a job for a locale reaches a workflow step.")]
+    public async Task<WebhookResponse<JobWorkflowStepReachedPayload>> OnJobWorkflowStepReachedManual(
+        WebhookRequest request,
+        [WebhookParameter] ProjectIdentifier projectIdentifier,
+        [WebhookParameter] JobOptionalIdentifier jobOptionalIdentifier,
+        [WebhookParameter] TargetLocalesIdentifier targetLocalesIdentifier,
+        [WebhookParameter] WorkflowStepOptionalIdentifier workflowStepOptionalIdentifier)
+    {
+        var result = await HandleCallback<JobWorkflowStepReachedPayload>(request);
+        return MatchesJobWorkflowStepFilters(
+            result.Result,
+            jobOptionalIdentifier,
+            targetLocalesIdentifier,
+            workflowStepOptionalIdentifier)
+            ? result
+            : GetPreflightResponse<JobWorkflowStepReachedPayload>();
     }
 
     [Webhook("On string translation published (manual)",
@@ -334,6 +372,40 @@ public class CallbackList
             Result = null,
             ReceivedWebhookRequestType = WebhookRequestType.Preflight
         };
+    }
+
+    private static bool MatchesJobWorkflowStepFilters(
+        JobWorkflowStepReachedPayload? payload,
+        JobOptionalIdentifier jobIdentifier,
+        TargetLocalesIdentifier targetLocalesIdentifier,
+        WorkflowStepOptionalIdentifier workflowStepIdentifier)
+    {
+        if (!string.IsNullOrWhiteSpace(jobIdentifier.TranslationJobUid) &&
+            !string.Equals(jobIdentifier.TranslationJobUid, payload?.TranslationJob.JobUid,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var targetLocaleIds = targetLocalesIdentifier.TargetLocaleIds?
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToArray();
+
+        if (targetLocaleIds?.Length > 0 &&
+            !targetLocaleIds.Contains(payload?.LocaleWorkflowStep.Locale.LocaleId, StringComparer.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(workflowStepIdentifier.WorkflowStepUid) &&
+            !string.Equals(workflowStepIdentifier.WorkflowStepUid,
+                payload?.LocaleWorkflowStep.WorkflowStep.WorkflowStepUid,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return true;
     }
 
     private WebhookResponse<FilePublishedPayload> HandleFilePublishedCallback(WebhookRequest request)
