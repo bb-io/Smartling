@@ -19,6 +19,18 @@ public class CallbackList
 {
     #region Bridge callbacks
 
+    [Webhook("On job created", typeof(JobCreatedCallbackHandler),
+        Description = "This event is triggered when a job is created.")]
+    public async Task<WebhookResponse<JobCreatedPayload>> OnJobCreated(
+        WebhookRequest request,
+        [WebhookParameter] ProjectIdentifier projectIdentifier)
+    {
+        var result = await HandleCallback<JobCreatedPayload>(request);
+        return MatchesProjectFilter(result.Result, projectIdentifier)
+            ? result
+            : GetPreflightResponse<JobCreatedPayload>();
+    }
+
     [Webhook("On job completed", typeof(JobCompletedCallbackHandler),
         Description = "This event is triggered when a job is completed.")]
     public async Task<WebhookResponse<JobCompletedPayload>> OnJobCompleted(
@@ -169,6 +181,17 @@ public class CallbackList
     #endregion
 
     #region Manual callbacks
+
+    [Webhook("On job created (manual)", Description = "This manual event is triggered when a job is created.")]
+    public async Task<WebhookResponse<JobCreatedPayload>> OnJobCreatedManual(
+        WebhookRequest request,
+        [WebhookParameter] ProjectIdentifier projectIdentifier)
+    {
+        var result = await HandleCallback<JobCreatedPayload>(request);
+        return MatchesProjectFilter(result.Result, projectIdentifier)
+            ? result
+            : GetPreflightResponse<JobCreatedPayload>();
+    }
 
     [Webhook("On job completed (manual)", Description = "This manual event is triggered when a job is completed.")]
     public async Task<WebhookResponse<JobCompletedPayload>> OnJobCompletedManual(
@@ -406,6 +429,15 @@ public class CallbackList
         }
 
         return true;
+    }
+
+    private static bool MatchesProjectFilter(
+        TranslationJobWebhookPayload? payload,
+        ProjectIdentifier projectIdentifier)
+    {
+        return string.IsNullOrWhiteSpace(projectIdentifier.ProjectId) ||
+               string.Equals(projectIdentifier.ProjectId, payload?.Project?.ProjectUid,
+                   StringComparison.OrdinalIgnoreCase);
     }
 
     private WebhookResponse<FilePublishedPayload> HandleFilePublishedCallback(WebhookRequest request)

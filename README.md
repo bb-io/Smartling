@@ -139,6 +139,7 @@ Navigate to apps and search for Smartling. If you cannot find Smartling then cli
 
 ## Events
 
+- **On job created** and **On job created (manual)** are triggered when a job is created.
 - **On job cancelled** and **On job cancelled (manual)** are triggered when a job is cancelled.
 - **On job workflow step reached** and **On job workflow step reached (manual)** are triggered when all authorized content in a job for a locale reaches a workflow step. Both events can be filtered by job, target locales, and workflow step.
 - **On string translation published** and **On string translation published (manual)** are triggered when a string translation is published for a locale.
