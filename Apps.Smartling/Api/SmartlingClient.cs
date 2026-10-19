@@ -1,8 +1,11 @@
-﻿using Apps.Smartling.Constants;
+﻿using System.Net.Http.Headers;
+using Apps.Smartling.Constants;
 using Apps.Smartling.Models.Dtos;
 using Apps.Smartling.Models.Responses;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Exceptions;
+using Blackbird.Applications.Sdk.Common.Files;
+using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
 using Blackbird.Applications.Sdk.Utils.Extensions.Sdk;
 using Blackbird.Applications.Sdk.Utils.RestSharp;
 using Newtonsoft.Json;
@@ -12,6 +15,9 @@ namespace Apps.Smartling.Api;
 
 public class SmartlingClient : BlackBirdRestClient
 {
+    private static readonly HttpClient DownloadHttpClient = new() { BaseAddress = new Uri(Urls.ApiUrl) };
+    private readonly string _accessToken;
+    
     protected override JsonSerializerSettings JsonSettings =>
         new() { MissingMemberHandling = MissingMemberHandling.Ignore };
 
@@ -19,10 +25,32 @@ public class SmartlingClient : BlackBirdRestClient
         : base(new RestClientOptions
             { ThrowOnAnyError = false, BaseUrl = new Uri(Urls.ApiUrl) })
     {
-        var accessToken = GetAccessToken(authenticationCredentialsProviders);
-        this.AddDefaultHeader("Authorization", $"Bearer {accessToken}");
+        _accessToken = GetAccessToken(authenticationCredentialsProviders);
+        this.AddDefaultHeader("Authorization", $"Bearer {_accessToken}");
     }
 
+    public async Task<FileReference> DownloadFileStreamed(string endpoint, IFileManagementClient fileManagementClient)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
+
+        using var response = await DownloadHttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        if (!response.IsSuccessStatusCode)
+        {
+            string errorContent = await response.Content.ReadAsStringAsync();
+            throw new PluginApplicationException($"Download failed ({(int)response.StatusCode}): {errorContent}");
+        }
+
+        var headers = response.Content.Headers;
+        string fileName = headers.ContentDisposition?.FileNameStar ?? 
+                          headers.ContentDisposition?.FileName?.Trim('"') ?? 
+                          "file";
+        string contentType = headers.ContentType?.MediaType ?? "application/octet-stream";
+
+        await using var stream = await response.Content.ReadAsStreamAsync();
+        return await fileManagementClient.UploadAsync(stream, contentType, fileName);
+    }
+    
     protected override Exception ConfigureErrorException(RestResponse response)
     {
         if (string.IsNullOrWhiteSpace(response.Content))
