@@ -85,6 +85,10 @@ Navigate to apps and search for Smartling. If you cannot find Smartling then cli
 
 **Note**: A string added with **Add string to project** action can be authorized by a content owner in the Smartling Dashboard. Another way to authorize the string is to add it to a job with **Add string to job** action and then authorize the job with **Authorize job** action.
 
+### Machine translation
+
+- **Apply machine translation to strings** translates 1–1000 strings using MT or LLM profile. 
+
 ### Tags
 
 - **Add tags to strings by hashcode** adds one or more tags to one or more strings.

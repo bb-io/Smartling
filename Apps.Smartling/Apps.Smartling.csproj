@@ -24,7 +24,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource CopyToOutputDirectory="Always" Include="image\icon.png"></EmbeddedResource>
+        <InternalsVisibleTo Include="Tests.Smartling" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource CopyToOutputDirectory="Always" Include="image\icon.png"/>
         <EmbeddedResource CopyToOutputDirectory="Always" Include="..\README.md"/>
     </ItemGroup>
 
