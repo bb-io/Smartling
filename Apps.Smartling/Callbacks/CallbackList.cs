@@ -1,5 +1,6 @@
 using System.Net;
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Apps.Smartling.Callbacks.Handlers;
 using Apps.Smartling.Callbacks.Models.Payload.Files;
@@ -8,6 +9,7 @@ using Apps.Smartling.Callbacks.Models.Payload.Jobs;
 using Apps.Smartling.Callbacks.Models.Payload.Strings;
 using Apps.Smartling.Models.Identifiers;
 using Blackbird.Applications.Sdk.Common;
+using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Common.Webhooks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -15,8 +17,10 @@ using Newtonsoft.Json.Linq;
 namespace Apps.Smartling.Callbacks;
 
 [WebhookList]
-public class CallbackList
+public class CallbackList(InvocationContext invocationContext) : BaseInvocable(invocationContext)
 {
+    private const string JobWorkflowStepReachedEventType = "translationJob.localeWorkflowStep.reached";
+
     #region Bridge callbacks
 
     [Webhook("On job created", typeof(JobCreatedCallbackHandler),
@@ -65,21 +69,19 @@ public class CallbackList
 
     [Webhook("On job workflow step reached", typeof(JobWorkflowStepReachedCallbackHandler),
         Description = "This event is triggered when all authorized content in a job for a locale reaches a workflow step.")]
-    public async Task<WebhookResponse<JobWorkflowStepReachedPayload>> OnJobWorkflowStepReached(
+    public Task<WebhookResponse<JobWorkflowStepReachedPayload>> OnJobWorkflowStepReached(
         WebhookRequest request,
         [WebhookParameter] ProjectIdentifier projectIdentifier,
         [WebhookParameter] JobOptionalIdentifier jobOptionalIdentifier,
         [WebhookParameter] TargetLocalesIdentifier targetLocalesIdentifier,
         [WebhookParameter] WorkflowStepOptionalIdentifier workflowStepOptionalIdentifier)
     {
-        var result = await HandleCallback<JobWorkflowStepReachedPayload>(request);
-        return MatchesJobWorkflowStepFilters(
-            result.Result,
+        return HandleJobWorkflowStepReachedCallback(
+            request,
+            projectIdentifier,
             jobOptionalIdentifier,
             targetLocalesIdentifier,
-            workflowStepOptionalIdentifier)
-            ? result
-            : GetPreflightResponse<JobWorkflowStepReachedPayload>();
+            workflowStepOptionalIdentifier);
     }
 
     [Webhook("On string translation published", typeof(StringPublishedCallbackHandler),
@@ -225,21 +227,19 @@ public class CallbackList
 
     [Webhook("On job workflow step reached (manual)",
         Description = "This manual event is triggered when all authorized content in a job for a locale reaches a workflow step.")]
-    public async Task<WebhookResponse<JobWorkflowStepReachedPayload>> OnJobWorkflowStepReachedManual(
+    public Task<WebhookResponse<JobWorkflowStepReachedPayload>> OnJobWorkflowStepReachedManual(
         WebhookRequest request,
         [WebhookParameter] ProjectIdentifier projectIdentifier,
         [WebhookParameter] JobOptionalIdentifier jobOptionalIdentifier,
         [WebhookParameter] TargetLocalesIdentifier targetLocalesIdentifier,
         [WebhookParameter] WorkflowStepOptionalIdentifier workflowStepOptionalIdentifier)
     {
-        var result = await HandleCallback<JobWorkflowStepReachedPayload>(request);
-        return MatchesJobWorkflowStepFilters(
-            result.Result,
+        return HandleJobWorkflowStepReachedCallback(
+            request,
+            projectIdentifier,
             jobOptionalIdentifier,
             targetLocalesIdentifier,
-            workflowStepOptionalIdentifier)
-            ? result
-            : GetPreflightResponse<JobWorkflowStepReachedPayload>();
+            workflowStepOptionalIdentifier);
     }
 
     [Webhook("On string translation published (manual)",
@@ -397,14 +397,69 @@ public class CallbackList
         };
     }
 
+    private Task<WebhookResponse<JobWorkflowStepReachedPayload>> HandleJobWorkflowStepReachedCallback(
+        WebhookRequest request,
+        ProjectIdentifier projectIdentifier,
+        JobOptionalIdentifier jobIdentifier,
+        TargetLocalesIdentifier targetLocalesIdentifier,
+        WorkflowStepOptionalIdentifier workflowStepIdentifier)
+    {
+        var payload = TryDeserializePayload<JobWorkflowStepReachedPayload>(request);
+        if (!IsJobWorkflowStepReachedEvent(payload))
+        {
+            InvocationContext.Logger?.LogWarning(
+                $"[SmartlingJobWorkflowStepReached] Ignored a webhook request that is not a readable {JobWorkflowStepReachedEventType} event. Body: {request.Body}",
+                []);
+            return Task.FromResult(GetPreflightResponse<JobWorkflowStepReachedPayload>());
+        }
+
+        var matchesFilters = MatchesProjectFilter(payload, projectIdentifier) &&
+                             MatchesJobWorkflowStepFilters(payload, jobIdentifier, targetLocalesIdentifier,
+                                 workflowStepIdentifier);
+
+        return Task.FromResult(matchesFilters
+            ? new WebhookResponse<JobWorkflowStepReachedPayload>
+            {
+                HttpResponseMessage = new HttpResponseMessage(statusCode: HttpStatusCode.OK),
+                Result = payload
+            }
+            : GetPreflightResponse<JobWorkflowStepReachedPayload>());
+    }
+
+    private static T? TryDeserializePayload<T>(WebhookRequest request) where T : class
+    {
+        var body = request.Body?.ToString();
+        if (string.IsNullOrWhiteSpace(body))
+            return null;
+
+        try
+        {
+            return JsonConvert.DeserializeObject<T>(body,
+                new JsonSerializerSettings { MissingMemberHandling = MissingMemberHandling.Ignore });
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static bool IsJobWorkflowStepReachedEvent([NotNullWhen(true)] JobWorkflowStepReachedPayload? payload)
+    {
+        return payload is not null &&
+               (string.IsNullOrWhiteSpace(payload.EventType) ||
+                string.Equals(payload.EventType, JobWorkflowStepReachedEventType, StringComparison.OrdinalIgnoreCase)) &&
+               !string.IsNullOrWhiteSpace(payload.TranslationJob?.JobUid) &&
+               !string.IsNullOrWhiteSpace(payload.LocaleWorkflowStep?.WorkflowStep?.WorkflowStepUid);
+    }
+
     private static bool MatchesJobWorkflowStepFilters(
-        JobWorkflowStepReachedPayload? payload,
+        JobWorkflowStepReachedPayload payload,
         JobOptionalIdentifier jobIdentifier,
         TargetLocalesIdentifier targetLocalesIdentifier,
         WorkflowStepOptionalIdentifier workflowStepIdentifier)
     {
         if (!string.IsNullOrWhiteSpace(jobIdentifier.TranslationJobUid) &&
-            !string.Equals(jobIdentifier.TranslationJobUid, payload?.TranslationJob.JobUid,
+            !string.Equals(jobIdentifier.TranslationJobUid, payload.TranslationJob.JobUid,
                 StringComparison.OrdinalIgnoreCase))
         {
             return false;
@@ -415,14 +470,14 @@ public class CallbackList
             .ToArray();
 
         if (targetLocaleIds?.Length > 0 &&
-            !targetLocaleIds.Contains(payload?.LocaleWorkflowStep.Locale.LocaleId, StringComparer.OrdinalIgnoreCase))
+            !targetLocaleIds.Contains(payload.LocaleWorkflowStep.Locale?.LocaleId, StringComparer.OrdinalIgnoreCase))
         {
             return false;
         }
 
         if (!string.IsNullOrWhiteSpace(workflowStepIdentifier.WorkflowStepUid) &&
             !string.Equals(workflowStepIdentifier.WorkflowStepUid,
-                payload?.LocaleWorkflowStep.WorkflowStep.WorkflowStepUid,
+                payload.LocaleWorkflowStep.WorkflowStep.WorkflowStepUid,
                 StringComparison.OrdinalIgnoreCase))
         {
             return false;
