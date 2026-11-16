@@ -248,16 +248,7 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
         uploadFileRequest.AddParameter("fileType", fileType);
         if (!string.IsNullOrEmpty(FileInput?.CallbackUrl))
             uploadFileRequest.AddParameter("callbackUrl", FileInput.CallbackUrl);
-        if (FileInput != null && FileInput.Directives != null && FileInput.Directives.Any()
-            && FileInput.DirectiveValues != null && FileInput.DirectiveValues.Any())
-        {
-            var directivePairs = FileInput.Directives.Zip(FileInput.DirectiveValues, (key, value) => new { key, value });
-            foreach (var pair in directivePairs)
-            {
-                uploadFileRequest.AddParameter(pair.key, pair.value);
-            }
-
-        }
+        SmartlingUploadDirectivesHelper.AddDirectives(uploadFileRequest, FileInput?.Directives, FileInput?.DirectiveValues);
         await Client.ExecuteWithErrorHandling(uploadFileRequest);
 
         fileUri = getTargetFileDataResponse.Response.Data.Items.First().TargetFiles.First().TargetFileUri;
@@ -337,16 +328,7 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
         uploadFileRequest.AddParameter("fileType", fileType);
         if (!string.IsNullOrEmpty(FileInput?.CallbackUrl))
             uploadFileRequest.AddParameter("callbackUrl", FileInput.CallbackUrl);
-        if (FileInput != null && FileInput.Directives != null && FileInput.Directives.Any()
-           && FileInput.DirectiveValues != null && FileInput.DirectiveValues.Any())
-        {
-            var directivePairs = FileInput.Directives.Zip(FileInput.DirectiveValues, (key, value) => new { key, value });
-            foreach (var pair in directivePairs)
-            {
-                uploadFileRequest.AddParameter(pair.key, pair.value);
-            }
-
-        }
+        SmartlingUploadDirectivesHelper.AddDirectives(uploadFileRequest, FileInput?.Directives, FileInput?.DirectiveValues);
         await Client.ExecuteWithErrorHandling(uploadFileRequest);
 
         fileUri = getTargetFileDataResponse.Response.Data.Items.First().TargetFiles.First().TargetFileUri;
