@@ -64,17 +64,14 @@ public class UnauthorizedProgressReportDto
 
 public class WorkflowProgressReportDto
 {
-    [Display("Workflow step type")]
-    public string WorkflowStepType { get; set; }
+    [Display("Workflow name")]
+    public string WorkflowName { get; set; }
 
-    [Display("String count")]
-    public double StringCount { get; set; }
+    [Display("Workflow ID")]
+    public string WorkflowUid { get; set; }
 
-    [Display("Word count")]
-    public double WordCount { get; set; }
-
-    [Display("Percent complete")]
-    public double PercentComplete { get; set; }
+    [Display("Workflow step summary report")]
+    public List<SummaryReportDto> WorkflowStepSummaryReport { get; set; }
 }
 
 public class ProgressDto
