@@ -2,22 +2,26 @@ using System.Net;
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using Apps.Smartling.Api;
 using Apps.Smartling.Callbacks.Handlers;
 using Apps.Smartling.Callbacks.Models.Payload.Files;
 using Apps.Smartling.Callbacks.Models.Payload.Issues;
 using Apps.Smartling.Callbacks.Models.Payload.Jobs;
 using Apps.Smartling.Callbacks.Models.Payload.Strings;
+using Apps.Smartling.Models.Dtos.Files;
 using Apps.Smartling.Models.Identifiers;
+using Apps.Smartling.Models.Responses;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Common.Webhooks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using RestSharp;
 
 namespace Apps.Smartling.Callbacks;
 
 [WebhookList]
-public class CallbackList(InvocationContext invocationContext) : BaseInvocable(invocationContext)
+public class CallbackList(InvocationContext invocationContext) : SmartlingInvocable(invocationContext)
 {
     private const string JobWorkflowStepReachedEventType = "translationJob.localeWorkflowStep.reached";
 
@@ -346,6 +350,9 @@ public class CallbackList(InvocationContext invocationContext) : BaseInvocable(i
                 return GetPreflightResponse<FilePublishedPayload>();
         }
 
+        if (!await IsFileFullyPublished(projectIdentifier, result.Result?.FileUri, result.Result?.Locale))
+            return GetPreflightResponse<FilePublishedPayload>();
+
         return result;
     }
 
@@ -649,4 +656,26 @@ public class CallbackList(InvocationContext invocationContext) : BaseInvocable(i
 
     private static string? GetQueryValue(IReadOnlyDictionary<string, string> queryParameters, string key)
         => queryParameters.TryGetValue(key, out var value) ? value : null;
+    
+    private async Task<bool> IsFileFullyPublished(ProjectIdentifier projectIdentifier, string? fileUri, string? locale)
+    {
+        if (string.IsNullOrWhiteSpace(fileUri) || string.IsNullOrWhiteSpace(locale))
+            return false;
+
+        string projectId = await GetProjectId(projectIdentifier.ProjectId);
+        var request = new SmartlingRequest($"/files-api/v2/projects/{projectId}/locales/{locale}/file/status", Method.Get)
+            .AddQueryParameter("fileUri", fileUri);
+        
+        try
+        {
+            var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<FileLocaleStatusDto>>(request);
+            var status = response.Response.Data;
+            return status.CompletedStringCount + status.ExcludedStringCount >= status.TotalStringCount;
+        }
+        catch (Exception ex)
+        {
+            InvocationContext.Logger?.LogWarning($"Couldn't verify publish status for '{fileUri}' ({locale}): {ex.Message}", []);
+            return false;
+        }
+    }
 }
