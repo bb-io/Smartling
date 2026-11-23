@@ -13,13 +13,15 @@ namespace Apps.Smartling;
 
 public class SmartlingInvocable : BaseInvocable
 {
-    protected readonly SmartlingClient Client;
     protected readonly IEnumerable<AuthenticationCredentialsProvider> Credentials;
+
+    private SmartlingClient? _client;
+
+    protected SmartlingClient Client => _client ??= new(Credentials);
 
     protected SmartlingInvocable(InvocationContext invocationContext) : base(invocationContext)
     {
         Credentials = invocationContext.AuthenticationCredentialsProviders;
-        Client = new(Credentials);
     }
     
     protected async Task<string> GetAccountUid()
