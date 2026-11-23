@@ -24,6 +24,10 @@ namespace Apps.Smartling.Callbacks;
 public class CallbackList(InvocationContext invocationContext) : SmartlingInvocable(invocationContext)
 {
     private const string JobWorkflowStepReachedEventType = "translationJob.localeWorkflowStep.reached";
+    private const string SourceIssueCreatedEventType = "sourceIssue.created";
+    private const string TranslationIssueCreatedEventType = "translationIssue.created";
+    private const string SourceIssueCommentCreatedEventType = "sourceIssue.comment.created";
+    private const string TranslationIssueCommentCreatedEventType = "translationIssue.comment.created";
 
     #region Bridge callbacks
 
@@ -105,83 +109,46 @@ public class CallbackList(InvocationContext invocationContext) : SmartlingInvoca
 
     [Webhook("On source issue created", typeof(SourceIssueCreatedCallbackHandler),
         Description = "This event is triggered when a source issue is created.")]
-    public async Task<WebhookResponse<SourceIssueCreatedPayload>> OnSourceIssueCreated(
+    public Task<WebhookResponse<SourceIssueCreatedPayload>> OnSourceIssueCreated(
         WebhookRequest request,
         [WebhookParameter] ProjectIdentifier projectIdentifier,
         [WebhookParameter] IssueOptionalIdentifier optionalIdentifier)
     {
-        var result = await HandleCallback<SourceIssueCreatedPayload>(request);
-        if (optionalIdentifier.IssueUid != null && optionalIdentifier.IssueUid != result.Result?.SourceIssue?.SourceIssueUid)
-        {
-            return GetPreflightResponse<SourceIssueCreatedPayload>();
-        }
-
-        return result;
+        return HandleSourceIssueCreatedCallback(request, projectIdentifier, optionalIdentifier);
     }
 
     [Webhook("On translation issue created", typeof(TranslationIssueCreatedCallbackHandler),
         Description = "This event is triggered when a translation issue is created.")]
-    public async Task<WebhookResponse<TranslationIssueCreatedPayload>> OnTranslationIssueCreated(
+    public Task<WebhookResponse<TranslationIssueCreatedPayload>> OnTranslationIssueCreated(
         WebhookRequest request,
         [WebhookParameter] ProjectIdentifier projectIdentifier,
         [WebhookParameter] IssueOptionalIdentifier optionalIdentifier)
     {
-        var result = await HandleCallback<TranslationIssueCreatedPayload>(request);
-        if (optionalIdentifier.IssueUid != null &&
-            optionalIdentifier.IssueUid != result.Result?.TranslationIssue?.TranslationIssueUid)
-        {
-            return GetPreflightResponse<TranslationIssueCreatedPayload>();
-        }
-
-        return result;
+        return HandleTranslationIssueCreatedCallback(request, projectIdentifier, optionalIdentifier);
     }
 
     [Webhook("On source issue comment created", typeof(SourceIssueCommentCreatedCallbackHandler),
         Description = "This event is triggered when a comment is added to a source issue.")]
-    public async Task<WebhookResponse<SourceIssueCommentCreatedPayload>> OnSourceIssueCommentCreated(
+    public Task<WebhookResponse<SourceIssueCommentCreatedPayload>> OnSourceIssueCommentCreated(
         WebhookRequest request,
         [WebhookParameter] ProjectIdentifier projectIdentifier,
         [WebhookParameter] IssueOptionalIdentifier optionalIssueIdentifier,
         [WebhookParameter] IssueCommentOptionalIdentifier optionalCommentIdentifier)
     {
-        var result = await HandleCallback<SourceIssueCommentCreatedPayload>(request);
-        if (optionalIssueIdentifier.IssueUid != null &&
-            optionalIssueIdentifier.IssueUid != result.Result?.SourceIssue?.SourceIssueUid)
-        {
-            return GetPreflightResponse<SourceIssueCommentCreatedPayload>();
-        }
-
-        if (optionalCommentIdentifier.CommentUid != null &&
-            optionalCommentIdentifier.CommentUid != result.Result?.SourceIssueComment?.CommentUid)
-        {
-            return GetPreflightResponse<SourceIssueCommentCreatedPayload>();
-        }
-
-        return result;
+        return HandleSourceIssueCommentCreatedCallback(request, projectIdentifier, optionalIssueIdentifier,
+            optionalCommentIdentifier);
     }
 
     [Webhook("On translation issue comment created", typeof(TranslationIssueCommentCreatedCallbackHandler),
         Description = "This event is triggered when a comment is added to a translation issue.")]
-    public async Task<WebhookResponse<TranslationIssueCommentCreatedPayload>> OnTranslationIssueCommentCreated(
+    public Task<WebhookResponse<TranslationIssueCommentCreatedPayload>> OnTranslationIssueCommentCreated(
         WebhookRequest request,
         [WebhookParameter] ProjectIdentifier projectIdentifier,
         [WebhookParameter] IssueOptionalIdentifier optionalIssueIdentifier,
         [WebhookParameter] IssueCommentOptionalIdentifier optionalCommentIdentifier)
     {
-        var result = await HandleCallback<TranslationIssueCommentCreatedPayload>(request);
-        if (optionalIssueIdentifier.IssueUid != null &&
-            optionalIssueIdentifier.IssueUid != result.Result?.TranslationIssue?.TranslationIssueUid)
-        {
-            return GetPreflightResponse<TranslationIssueCommentCreatedPayload>();
-        }
-
-        if (optionalCommentIdentifier.CommentUid != null &&
-            optionalCommentIdentifier.CommentUid != result.Result?.TranslationIssueComment?.CommentUid)
-        {
-            return GetPreflightResponse<TranslationIssueCommentCreatedPayload>();
-        }
-
-        return result;
+        return HandleTranslationIssueCommentCreatedCallback(request, projectIdentifier, optionalIssueIdentifier,
+            optionalCommentIdentifier);
     }
 
     #endregion
@@ -263,59 +230,34 @@ public class CallbackList(InvocationContext invocationContext) : SmartlingInvoca
 
     [Webhook("On source issue created (manual)",
         Description = "This manual event is triggered when a source issue is created.")]
-    public async Task<WebhookResponse<SourceIssueCreatedPayload>> OnSourceIssueCreatedManual(
+    public Task<WebhookResponse<SourceIssueCreatedPayload>> OnSourceIssueCreatedManual(
         WebhookRequest request,
         [WebhookParameter] ProjectIdentifier projectIdentifier,
         [WebhookParameter] IssueOptionalIdentifier optionalIdentifier)
     {
-        var result = await HandleCallback<SourceIssueCreatedPayload>(request);
-        if (optionalIdentifier.IssueUid != null && optionalIdentifier.IssueUid != result.Result?.SourceIssue?.SourceIssueUid)
-        {
-            return GetPreflightResponse<SourceIssueCreatedPayload>();
-        }
-
-        return result;
+        return HandleSourceIssueCreatedCallback(request, projectIdentifier, optionalIdentifier);
     }
 
     [Webhook("On translation issue created (manual)",
         Description = "This manual event is triggered when a translation issue is created.")]
-    public async Task<WebhookResponse<TranslationIssueCreatedPayload>> OnTranslationIssueCreatedManual(
+    public Task<WebhookResponse<TranslationIssueCreatedPayload>> OnTranslationIssueCreatedManual(
         WebhookRequest request,
         [WebhookParameter] ProjectIdentifier projectIdentifier,
         [WebhookParameter] IssueOptionalIdentifier optionalIdentifier)
     {
-        var result = await HandleCallback<TranslationIssueCreatedPayload>(request);
-        if (optionalIdentifier.IssueUid != null &&
-            optionalIdentifier.IssueUid != result.Result?.TranslationIssue?.TranslationIssueUid)
-        {
-            return GetPreflightResponse<TranslationIssueCreatedPayload>();
-        }
-
-        return result;
+        return HandleTranslationIssueCreatedCallback(request, projectIdentifier, optionalIdentifier);
     }
 
     [Webhook("On source issue comment created (manual)",
         Description = "This manual event is triggered when a comment is added to a source issue.")]
-    public async Task<WebhookResponse<SourceIssueCommentCreatedPayload>> OnSourceIssueCommentCreatedManual(
+    public Task<WebhookResponse<SourceIssueCommentCreatedPayload>> OnSourceIssueCommentCreatedManual(
         WebhookRequest request,
         [WebhookParameter] ProjectIdentifier projectIdentifier,
         [WebhookParameter] IssueOptionalIdentifier optionalIssueIdentifier,
         [WebhookParameter] IssueCommentOptionalIdentifier optionalCommentIdentifier)
     {
-        var result = await HandleCallback<SourceIssueCommentCreatedPayload>(request);
-        if (optionalIssueIdentifier.IssueUid != null &&
-            optionalIssueIdentifier.IssueUid != result.Result?.SourceIssue?.SourceIssueUid)
-        {
-            return GetPreflightResponse<SourceIssueCommentCreatedPayload>();
-        }
-
-        if (optionalCommentIdentifier.CommentUid != null &&
-            optionalCommentIdentifier.CommentUid != result.Result?.SourceIssueComment?.CommentUid)
-        {
-            return GetPreflightResponse<SourceIssueCommentCreatedPayload>();
-        }
-
-        return result;
+        return HandleSourceIssueCommentCreatedCallback(request, projectIdentifier, optionalIssueIdentifier,
+            optionalCommentIdentifier);
     }
 
     [Webhook("On file published (manual)",
@@ -358,29 +300,102 @@ public class CallbackList(InvocationContext invocationContext) : SmartlingInvoca
 
     [Webhook("On translation issue comment created (manual)",
         Description = "This manual event is triggered when a comment is added to a translation issue.")]
-    public async Task<WebhookResponse<TranslationIssueCommentCreatedPayload>> OnTranslationIssueCommentCreatedManual(
+    public Task<WebhookResponse<TranslationIssueCommentCreatedPayload>> OnTranslationIssueCommentCreatedManual(
         WebhookRequest request,
         [WebhookParameter] ProjectIdentifier projectIdentifier,
         [WebhookParameter] IssueOptionalIdentifier optionalIssueIdentifier,
         [WebhookParameter] IssueCommentOptionalIdentifier optionalCommentIdentifier)
     {
-        var result = await HandleCallback<TranslationIssueCommentCreatedPayload>(request);
-        if (optionalIssueIdentifier.IssueUid != null &&
-            optionalIssueIdentifier.IssueUid != result.Result?.TranslationIssue?.TranslationIssueUid)
-        {
-            return GetPreflightResponse<TranslationIssueCommentCreatedPayload>();
-        }
-
-        if (optionalCommentIdentifier.CommentUid != null &&
-            optionalCommentIdentifier.CommentUid != result.Result?.TranslationIssueComment?.CommentUid)
-        {
-            return GetPreflightResponse<TranslationIssueCommentCreatedPayload>();
-        }
-
-        return result;
+        return HandleTranslationIssueCommentCreatedCallback(request, projectIdentifier, optionalIssueIdentifier,
+            optionalCommentIdentifier);
     }
 
     #endregion
+
+    private Task<WebhookResponse<SourceIssueCreatedPayload>> HandleSourceIssueCreatedCallback(
+        WebhookRequest request,
+        ProjectIdentifier projectIdentifier,
+        IssueOptionalIdentifier issueIdentifier)
+    {
+        return HandleIssueCallback<SourceIssueCreatedPayload>(
+            request,
+            SourceIssueCreatedEventType,
+            projectIdentifier,
+            payload => !string.IsNullOrWhiteSpace(payload.SourceIssue?.SourceIssueUid),
+            payload => MatchesOptionalId(issueIdentifier.IssueUid, payload.SourceIssue.SourceIssueUid));
+    }
+
+    private Task<WebhookResponse<TranslationIssueCreatedPayload>> HandleTranslationIssueCreatedCallback(
+        WebhookRequest request,
+        ProjectIdentifier projectIdentifier,
+        IssueOptionalIdentifier issueIdentifier)
+    {
+        return HandleIssueCallback<TranslationIssueCreatedPayload>(
+            request,
+            TranslationIssueCreatedEventType,
+            projectIdentifier,
+            payload => !string.IsNullOrWhiteSpace(payload.TranslationIssue?.TranslationIssueUid),
+            payload => MatchesOptionalId(issueIdentifier.IssueUid, payload.TranslationIssue.TranslationIssueUid));
+    }
+
+    private Task<WebhookResponse<SourceIssueCommentCreatedPayload>> HandleSourceIssueCommentCreatedCallback(
+        WebhookRequest request,
+        ProjectIdentifier projectIdentifier,
+        IssueOptionalIdentifier issueIdentifier,
+        IssueCommentOptionalIdentifier commentIdentifier)
+    {
+        return HandleIssueCallback<SourceIssueCommentCreatedPayload>(
+            request,
+            SourceIssueCommentCreatedEventType,
+            projectIdentifier,
+            payload => !string.IsNullOrWhiteSpace(payload.SourceIssue?.SourceIssueUid) &&
+                       !string.IsNullOrWhiteSpace(payload.SourceIssueComment?.CommentUid),
+            payload => MatchesOptionalId(issueIdentifier.IssueUid, payload.SourceIssue.SourceIssueUid) &&
+                       MatchesOptionalId(commentIdentifier.CommentUid, payload.SourceIssueComment.CommentUid));
+    }
+
+    private Task<WebhookResponse<TranslationIssueCommentCreatedPayload>> HandleTranslationIssueCommentCreatedCallback(
+        WebhookRequest request,
+        ProjectIdentifier projectIdentifier,
+        IssueOptionalIdentifier issueIdentifier,
+        IssueCommentOptionalIdentifier commentIdentifier)
+    {
+        return HandleIssueCallback<TranslationIssueCommentCreatedPayload>(
+            request,
+            TranslationIssueCommentCreatedEventType,
+            projectIdentifier,
+            payload => !string.IsNullOrWhiteSpace(payload.TranslationIssue?.TranslationIssueUid) &&
+                       !string.IsNullOrWhiteSpace(payload.TranslationIssueComment?.CommentUid),
+            payload => MatchesOptionalId(issueIdentifier.IssueUid, payload.TranslationIssue.TranslationIssueUid) &&
+                       MatchesOptionalId(commentIdentifier.CommentUid, payload.TranslationIssueComment.CommentUid));
+    }
+
+    private Task<WebhookResponse<T>> HandleIssueCallback<T>(
+        WebhookRequest request,
+        string expectedEventType,
+        ProjectIdentifier projectIdentifier,
+        Func<T, bool> containsIssueData,
+        Func<T, bool> matchesIssueFilters) where T : class, IIssueWebhookPayload
+    {
+        var payload = TryDeserializePayload<T>(request);
+        if (payload is null || !IsExpectedEventType(payload.EventType, expectedEventType) || !containsIssueData(payload))
+        {
+            InvocationContext.Logger?.LogWarning(
+                $"[SmartlingIssueWebhook] Ignored a webhook request that is not a readable {expectedEventType} event. Body: {request.Body}",
+                []);
+            return Task.FromResult(GetPreflightResponse<T>());
+        }
+
+        var matchesFilters = MatchesProjectFilter(payload.Project?.ProjectUid, projectIdentifier) &&
+                             matchesIssueFilters(payload);
+
+        return Task.FromResult(matchesFilters ? GetEventResponse(payload) : GetPreflightResponse<T>());
+    }
+
+    private static bool MatchesOptionalId(string? filterId, string? payloadId)
+    {
+        return filterId == null || filterId == payloadId;
+    }
 
     private Task<WebhookResponse<T>> HandleCallback<T>(WebhookRequest request) where T : class
     {
@@ -425,12 +440,23 @@ public class CallbackList(InvocationContext invocationContext) : SmartlingInvoca
                                  workflowStepIdentifier);
 
         return Task.FromResult(matchesFilters
-            ? new WebhookResponse<JobWorkflowStepReachedPayload>
-            {
-                HttpResponseMessage = new HttpResponseMessage(statusCode: HttpStatusCode.OK),
-                Result = payload
-            }
+            ? GetEventResponse(payload)
             : GetPreflightResponse<JobWorkflowStepReachedPayload>());
+    }
+
+    private static WebhookResponse<T> GetEventResponse<T>(T payload) where T : class
+    {
+        return new WebhookResponse<T>
+        {
+            HttpResponseMessage = new HttpResponseMessage(statusCode: HttpStatusCode.OK),
+            Result = payload
+        };
+    }
+
+    private static bool IsExpectedEventType(string? eventType, string expectedEventType)
+    {
+        return string.IsNullOrWhiteSpace(eventType) ||
+               string.Equals(eventType, expectedEventType, StringComparison.OrdinalIgnoreCase);
     }
 
     private static T? TryDeserializePayload<T>(WebhookRequest request) where T : class
@@ -453,8 +479,7 @@ public class CallbackList(InvocationContext invocationContext) : SmartlingInvoca
     private static bool IsJobWorkflowStepReachedEvent([NotNullWhen(true)] JobWorkflowStepReachedPayload? payload)
     {
         return payload is not null &&
-               (string.IsNullOrWhiteSpace(payload.EventType) ||
-                string.Equals(payload.EventType, JobWorkflowStepReachedEventType, StringComparison.OrdinalIgnoreCase)) &&
+               IsExpectedEventType(payload.EventType, JobWorkflowStepReachedEventType) &&
                !string.IsNullOrWhiteSpace(payload.TranslationJob?.JobUid) &&
                !string.IsNullOrWhiteSpace(payload.LocaleWorkflowStep?.WorkflowStep?.WorkflowStepUid);
     }
@@ -497,9 +522,13 @@ public class CallbackList(InvocationContext invocationContext) : SmartlingInvoca
         TranslationJobWebhookPayload? payload,
         ProjectIdentifier projectIdentifier)
     {
+        return MatchesProjectFilter(payload?.Project?.ProjectUid, projectIdentifier);
+    }
+
+    private static bool MatchesProjectFilter(string? payloadProjectUid, ProjectIdentifier projectIdentifier)
+    {
         return string.IsNullOrWhiteSpace(projectIdentifier.ProjectId) ||
-               string.Equals(projectIdentifier.ProjectId, payload?.Project?.ProjectUid,
-                   StringComparison.OrdinalIgnoreCase);
+               string.Equals(projectIdentifier.ProjectId, payloadProjectUid, StringComparison.OrdinalIgnoreCase);
     }
 
     private WebhookResponse<FilePublishedPayload> HandleFilePublishedCallback(WebhookRequest request)

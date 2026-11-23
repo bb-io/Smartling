@@ -2,7 +2,7 @@ using Blackbird.Applications.Sdk.Common;
 
 namespace Apps.Smartling.Callbacks.Models.Payload.Issues;
 
-public class SourceIssueCreatedPayload
+public class SourceIssueCreatedPayload : IIssueWebhookPayload
 {
     [Display("Event ID")]
     public string EventId { get; set; }
