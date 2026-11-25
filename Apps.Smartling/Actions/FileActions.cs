@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Mime;
 using Apps.Smartling.Api;
+using Apps.Smartling.Extensions;
 using Apps.Smartling.Models;
 using Apps.Smartling.Models.Dtos;
 using Apps.Smartling.Models.Dtos.Files;
@@ -13,6 +14,7 @@ using Apps.Smartling.Models.Responses.Files;
 using Apps.Smartling.Utils;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Files;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Utils.Extensions.Files;
@@ -252,18 +254,8 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
         await Client.ExecuteWithErrorHandling(uploadFileRequest);
 
         fileUri = getTargetFileDataResponse.Response.Data.Items.First().TargetFiles.First().TargetFileUri;
-
-        RestResponse getFileStatusResponse;
-
-        do
-        {
-            var getFileStatusRequest = new SmartlingRequest(
-                $"/files-api/v2/projects/{projectId}/file/status?fileUri={fileUri}", 
-                Method.Get
-            );
-
-            getFileStatusResponse = await Client.ExecuteAsync(getFileStatusRequest);
-        } while (getFileStatusResponse.StatusCode != HttpStatusCode.OK);
+        
+        await WaitForFileProcessed(projectId, fileUri);
 
         var locales = targetLocales.TargetLocaleIds;
 
@@ -333,15 +325,7 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
 
         fileUri = getTargetFileDataResponse.Response.Data.Items.First().TargetFiles.First().TargetFileUri;
 
-        RestResponse getFileStatusResponse;
-
-        do
-        {
-            var getFileStatusRequest =
-                new SmartlingRequest($"/files-api/v2/projects/{projectId}/file/status?fileUri={fileUri}", Method.Get);
-            getFileStatusResponse = await Client.ExecuteAsync(getFileStatusRequest);
-        } while (getFileStatusResponse.StatusCode != HttpStatusCode.OK);
-
+        await WaitForFileProcessed(projectId, fileUri);
         return new SourceFileIdentifier { FileUri = fileUri };
     }
 
@@ -403,9 +387,7 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
         var result = await Client.ExecuteWithErrorHandling<ResponseWrapper<ImportTranslationResponse>>(request);
         return result.Response.Data;
     }
-
-    #region Post utils
-
+    
     private static string GetFileType(string filename)
     {
         var extension = Path.GetExtension(filename).TrimStart('.');
@@ -450,5 +432,31 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
 
     #endregion
 
-    #endregion
+    private async Task WaitForFileProcessed(string projectId, string fileUri)
+    {
+        var request = new SmartlingRequest($"/files-api/v2/projects/{projectId}/file/status", Method.Get)
+            .AddQueryParameter("fileUri", fileUri);
+
+        // Platform timeout is 20 minutes so 2 extra minutes should be enough for every API call to process before this
+        var pollingTimeout = TimeSpan.FromMinutes(18);
+        var deadline = DateTime.UtcNow + pollingTimeout;
+        
+        while (DateTime.UtcNow < deadline)
+        {
+            var response = await Client.ExecuteAsync(request);
+            if (response.IsSuccessStatusCode)
+                return;
+
+            // 423 Locked = still processing
+            if (response.StatusCode != HttpStatusCode.Locked && !response.IsTransient())
+            {
+                string message = $"Failed to get status of file '{fileUri}'. Status {(int)response.StatusCode}: {response.Content}";
+                throw new PluginApplicationException(message.TrimEnd().TrimEnd(':'));
+            }
+
+            await Task.Delay(5);
+        }
+        
+        throw new PluginApplicationException($"Smartling didn't finish processing '{fileUri}' within {pollingTimeout} minutes.");
+    }
 }
