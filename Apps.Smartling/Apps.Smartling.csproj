@@ -6,7 +6,7 @@
         <Nullable>enable</Nullable>
         <Product>Smartling</Product>
         <Description>Cloud-based translation management platform that helps businesses efficiently translate and localize content, optimizing global communication strategies through automation and centralized management</Description>
-        <Version>1.7.30</Version>
+        <Version>1.7.31</Version>
         <AssemblyName>Apps.Smartling</AssemblyName>
     </PropertyGroup>
 
@@ -21,6 +21,7 @@
         <IncludeAssets>
 		time; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
+      <PackageReference Include="Polly" Version="8.9.1" />
     </ItemGroup>
 
     <ItemGroup>

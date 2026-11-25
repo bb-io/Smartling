@@ -1,4 +1,5 @@
 ﻿using Apps.Smartling.Constants;
+using Apps.Smartling.Extensions;
 using Apps.Smartling.Models.Dtos;
 using Apps.Smartling.Models.Responses;
 using Blackbird.Applications.Sdk.Common.Authentication;
@@ -6,12 +7,25 @@ using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Utils.Extensions.Sdk;
 using Blackbird.Applications.Sdk.Utils.RestSharp;
 using Newtonsoft.Json;
+using Polly;
+using Polly.Retry;
 using RestSharp;
 
 namespace Apps.Smartling.Api;
 
-public class SmartlingClient : BlackBirdRestClient
+public sealed class SmartlingClient : BlackBirdRestClient
 {
+    private static readonly ResiliencePipeline<RestResponse> RetryPipeline = new ResiliencePipelineBuilder<RestResponse>()
+        .AddRetry(new RetryStrategyOptions<RestResponse>()
+        {
+            ShouldHandle = new PredicateBuilder<RestResponse>().HandleResult(x => x.IsTransient()),
+            MaxRetryAttempts = 3,
+            Delay = TimeSpan.FromSeconds(2),
+            UseJitter = true,
+            BackoffType = DelayBackoffType.Exponential
+        })
+        .Build();
+    
     protected override JsonSerializerSettings JsonSettings =>
         new() { MissingMemberHandling = MissingMemberHandling.Ignore };
 
@@ -25,26 +39,31 @@ public class SmartlingClient : BlackBirdRestClient
 
     protected override Exception ConfigureErrorException(RestResponse response)
     {
+        string statusCodePart = $"Status {(int)response.StatusCode}.";
+        
         if (string.IsNullOrWhiteSpace(response.Content))
-            throw new PluginApplicationException("An error occured, but server did not return any content");
+            throw new PluginApplicationException($"{statusCodePart} No content returned by Smartling. {response.ErrorMessage}".Trim());
 
-        if (response.ContentType == "application/json")
+        switch (response.ContentType)
         {
-            var errors = JsonConvert.DeserializeObject<ErrorResponseWrapper>(response.Content) ??
-                throw new PluginApplicationException($"Cannot deserialize the error response. {response.Content}");
+            case "application/json":
+            {
+                var errors = JsonConvert.DeserializeObject<ErrorResponseWrapper>(response.Content) ??
+                             throw new PluginApplicationException($"{statusCodePart} Cannot deserialize the error response. {response.Content}");
 
-            string messages = string.Join("; ", errors.Response.Errors.Select(error => error.Message));
-            throw new PluginApplicationException($"{errors.Response.Code}: {messages}");
+                string messages = string.Join("; ", errors.Response.Errors.Select(error => error.Message));
+                throw new PluginApplicationException($"{errors.Response.Code}: {messages}");
+            }
+            case "text/html":
+            {
+                string htmlSnippet = response.Content.Length > 300
+                    ? response.Content[..300]
+                    : response.Content;
+                throw new PluginApplicationException($"{statusCodePart} HTML error (truncated): {htmlSnippet}");
+            }
+            default:
+                throw new PluginApplicationException($"{statusCodePart} Raw response: {response.Content}");
         }
-        if (response.ContentType == "text/html")
-        {
-            string htmlSnippet = response.Content.Length > 300
-                ? response.Content[..300]
-                : response.Content;
-            throw new PluginApplicationException($"HTML error (truncated): {htmlSnippet}");
-        }
-
-        throw new PluginApplicationException($"Unknown error. Raw response: {response.Content}");
     }
 
     private static string GetAccessToken(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders)
@@ -57,17 +76,16 @@ public class SmartlingClient : BlackBirdRestClient
             userSecret = authenticationCredentialsProviders.Get(CredsNames.UserSecret).Value
         });
         
-        var response = client.Execute(request);
-
+        var response = RetryPipeline.Execute(() => client.Execute(request));
         if (!response.IsSuccessful)
-            throw new PluginApplicationException("Failed to authorize. Please check the validity of your user identifier and secret.");
+            throw new PluginApplicationException($"Failed to authorize ({(int)response.StatusCode}): {response.Content ?? response.ErrorMessage}");
 
         var accessToken = JsonConvert.DeserializeObject<ResponseWrapper<AccessTokenDto>>(response.Content).Response.Data
             .AccessToken;
         return accessToken;
     }
 
-    public virtual async Task<AsyncProcessResult> ExecuteAsyncProcessWithHandling(RestRequest request, string projectId)
+    public async Task<AsyncProcessResult> ExecuteAsyncProcessWithHandling(RestRequest request, string projectId)
     {
         var content = await ExecuteWithErrorHandling<ResponseWrapper<AsyncProcessDto>>(request);
         var checkAsyncResultRequest = new SmartlingRequest($"/context-api/v2/projects/{projectId}/processes/{content.Response.Data.ProcessUid}", Method.Get);
@@ -95,7 +113,7 @@ public class SmartlingClient : BlackBirdRestClient
 
     public override async Task<RestResponse> ExecuteWithErrorHandling(RestRequest request)
     {
-        RestResponse restResponse = await ExecuteAsync(request);
+        RestResponse restResponse = await RetryPipeline.ExecuteAsync(ct => new ValueTask<RestResponse>(ExecuteAsync(request, ct)));
         if (!restResponse.IsSuccessStatusCode)
         {
             throw ConfigureErrorException(restResponse);
