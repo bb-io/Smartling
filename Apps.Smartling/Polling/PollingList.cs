@@ -26,7 +26,7 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
         string projectId = await GetProjectId(project.ProjectId);
         var endpoint = $"/jobs-api/v2/projects/{projectId}/jobs";
 
-        var jobs = (await Client.Paginate<JobItem>(
+        var jobs = (await Client.PaginateByOffset<JobItem>(
             new SmartlingRequest(endpoint, Method.Get)
         )).ToArray();
 
@@ -157,7 +157,7 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
         string projectId = await GetProjectId(project.ProjectId);
         var endpoint = $"/jobs-api/v2/projects/{projectId}/jobs";
 
-        var jobs = (await Client.Paginate<JobItem>(
+        var jobs = (await Client.PaginateByOffset<JobItem>(
             new SmartlingRequest(endpoint, Method.Get)
         )).ToArray();
 
