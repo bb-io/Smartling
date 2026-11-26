@@ -110,8 +110,10 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
         [ActionParameter] SourceFileIdentifier fileIdentifier)
     {
         string projectId = await GetProjectId(project.ProjectId);
-        var endpoint = $"/files-api/v2/projects/{projectId}/file?fileUri={fileIdentifier.FileUri}";
-        var file = await DownloadFile(endpoint);
+        var request = new SmartlingRequest($"/files-api/v2/projects/{projectId}/file", Method.Get)
+            .AddQueryParameter("fileUri", fileIdentifier.FileUri);
+        
+        var file = await DownloadFile(request);
         return new() { File = file };
     }
 
@@ -122,9 +124,11 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
         [ActionParameter] TargetLocaleIdentifier targetLocale)
     {
         string projectId = await GetProjectId(project.ProjectId);
-        var endpoint =
-            $"/files-api/v2/projects/{projectId}/locales/{targetLocale.TargetLocaleId}/file?fileUri={fileIdentifier.FileUri}";
-        var downloadedFile = await DownloadFileContent(endpoint);
+
+        var request = new SmartlingRequest($"/files-api/v2/projects/{projectId}/locales/{targetLocale.TargetLocaleId}/file", Method.Get)
+            .AddQueryParameter("fileUri", fileIdentifier.FileUri);
+
+        var downloadedFile = await DownloadFileContent(request);
         var localizedFileName = CreateNameForTranslatedFile(downloadedFile.FileName, targetLocale.TargetLocaleId);
         using var stream = new MemoryStream(downloadedFile.FileBytes);
         var uploadedFile = await fileManagementClient.UploadAsync(stream, downloadedFile.ContentType, localizedFileName);
@@ -137,8 +141,11 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
         [ActionParameter] SourceFileIdentifier fileIdentifier)
     {
         string projectId = await GetProjectId(project.ProjectId);
-        var endpoint = $"/files-api/v2/projects/{projectId}/locales/all/file/zip?fileUri={fileIdentifier.FileUri}";
-        var zip = await DownloadFile(endpoint);
+
+        var request = new SmartlingRequest($"/files-api/v2/projects/{projectId}/locales/all/file/zip", Method.Get)
+            .AddQueryParameter("fileUri", fileIdentifier.FileUri);
+        
+        var zip = await DownloadFile(request);
         var files = await (await fileManagementClient.DownloadAsync(zip)).GetFilesFromZip();
         var resultFiles = new List<FileWrapper>();
 
@@ -169,8 +176,11 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
         [ActionParameter] [Display("Output ZIP filename")] string? zipFilename)
     {
         string projectId = await GetProjectId(project.ProjectId);
-        var endpoint = $"/files-api/v2/projects/{projectId}/locales/all/file/zip?fileUri={fileIdentifier.FileUri}";
-        var zip = await DownloadFile(endpoint);
+
+        var request = new SmartlingRequest($"/files-api/v2/projects/{projectId}/locales/all/file/zip", Method.Get)
+            .AddQueryParameter("fileUri", fileIdentifier.FileUri);
+        
+        var zip = await DownloadFile(request);
         zip.Name = zipFilename != null ? 
             Path.HasExtension(zipFilename) ? zipFilename : zipFilename + ".zip"
             : fileIdentifier.FileUri + ".zip";
@@ -179,17 +189,16 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
 
     #region Get utils
 
-    private async Task<FileReference> DownloadFile(string endpoint)
+    private async Task<FileReference> DownloadFile(RestRequest request)
     {
-        var downloadedFile = await DownloadFileContent(endpoint);
+        var downloadedFile = await DownloadFileContent(request);
         using var stream = new MemoryStream(downloadedFile.FileBytes);
         var file = await fileManagementClient.UploadAsync(stream, downloadedFile.ContentType, downloadedFile.FileName);
         return file;
     }
 
-    private async Task<DownloadedFileContent> DownloadFileContent(string endpoint)
+    private async Task<DownloadedFileContent> DownloadFileContent(RestRequest request)
     {
-        var request = new SmartlingRequest(endpoint, Method.Get);
         var response = await Client.ExecuteWithErrorHandling(request);
         var filename = response.ContentHeaders.First(header => header.Name == "Content-Disposition").Value.ToString()
             .Split('"')[1];
@@ -454,9 +463,9 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
                 throw new PluginApplicationException(message.TrimEnd().TrimEnd(':'));
             }
 
-            await Task.Delay(5);
+            await Task.Delay(TimeSpan.FromSeconds(5));
         }
         
-        throw new PluginApplicationException($"Smartling didn't finish processing '{fileUri}' within {pollingTimeout} minutes.");
+        throw new PluginApplicationException($"Smartling didn't finish processing '{fileUri}' within {pollingTimeout.TotalMinutes} minutes.");
     }
 }
