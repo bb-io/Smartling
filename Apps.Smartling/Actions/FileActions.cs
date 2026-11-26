@@ -459,7 +459,9 @@ public class FileActions(InvocationContext invocationContext, IFileManagementCli
             // 423 Locked = still processing
             if (response.StatusCode != HttpStatusCode.Locked && !response.IsTransient())
             {
-                string message = $"Failed to get status of file '{fileUri}'. Status {(int)response.StatusCode}: {response.Content}";
+                string content = response.Content ?? string.Empty;
+                string snippet = content.Length > 300 ? content[..300] : content;
+                string message = $"Failed to get status of file '{fileUri}'. Status {(int)response.StatusCode}: {snippet}";
                 throw new PluginApplicationException(message.TrimEnd().TrimEnd(':'));
             }
 
