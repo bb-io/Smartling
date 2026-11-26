@@ -19,10 +19,11 @@ public class FileDataSourceHandler(
     {
         string projectId = await GetProjectId(project.ProjectId);
 
-        string endpoint = 
-            $"/files-api/v2/projects/{projectId}/files" +
-            $"/list?orderBy=lastUploaded_desc&limit=30&uriMask={context.SearchString ?? ""}";        
-        var request = new SmartlingRequest(endpoint, Method.Get);
+        var request = new SmartlingRequest($"/files-api/v2/projects/{projectId}/files/list", Method.Get)
+            .AddQueryParameter("orderBy", "lastUploaded_desc")
+            .AddQueryParameter("limit", "50")
+            .AddQueryParameter("uriMask", context.SearchString ?? "");
+        
         var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<UploadedFileDto>>>(request);
 
         var files = response.Response.Data.Items;

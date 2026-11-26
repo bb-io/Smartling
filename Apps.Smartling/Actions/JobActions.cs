@@ -127,18 +127,16 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
         if (!string.IsNullOrEmpty(input.JobNameContains))
             request.AddQueryParameter("jobName", input.JobNameContains);
 
-        if (input.Limit.HasValue && input.Limit > 0)
-            request.AddQueryParameter("limit", (int)input.Limit);
-
         if (input.SearchAccountWide == true && input.AccountWideSearchProjectIds != null)
             request.AddQueryParameter("projectIds", string.Join(",", input.AccountWideSearchProjectIds));
 
-        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<JobDto>>>(request);
-        var jobs = response.Response.Data.Items;
-
+        var response = await Client.PaginateByOffset<JobDto>(request);
+        
         if (projectId is not null)
-            foreach (var job in jobs)
+            foreach (var job in response)
                 job.ProjectId = projectId;
+        
+        IEnumerable<JobDto> jobs = response;
 
         if (input.CreatedDateBefore != null)
             jobs = jobs.Where(job => job.CreatedDate <= input.CreatedDateBefore);
@@ -152,7 +150,8 @@ public class JobActions(InvocationContext invocationContext) : SmartlingInvocabl
         if (input.DueDateAfter != null)
             jobs = jobs.Where(job => job.DueDate >= input.DueDateAfter);
 
-        return new SearchJobsResponse { Jobs = jobs, TotalCount = jobs is null ? 0 : jobs.Count()};
+        var filtered = jobs.ToList();
+        return new SearchJobsResponse { Jobs = filtered, TotalCount = filtered.Count };
     }
 
     [Action("Find job by hashcode", Description = "Find the first job that contains the specified hashcode, optionally filtered by language.")]

@@ -26,9 +26,9 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
         string projectId = await GetProjectId(project.ProjectId);
         var endpoint = $"/jobs-api/v2/projects/{projectId}/jobs";
 
-        var jobs = (await Client.Paginate<JobItem>(
-            new SmartlingRequest(endpoint, Method.Get)
-        )).ToArray();
+        var jobs = (await Client.PaginateByOffset<JobItem>(new SmartlingRequest(endpoint, Method.Get)))
+            .DistinctBy(job => job.TranslationJobUid)
+            .ToArray();
 
         if (jobs.Length == 0)
         {
@@ -157,9 +157,9 @@ public class PollingList(InvocationContext invocationContext) : SmartlingInvocab
         string projectId = await GetProjectId(project.ProjectId);
         var endpoint = $"/jobs-api/v2/projects/{projectId}/jobs";
 
-        var jobs = (await Client.Paginate<JobItem>(
-            new SmartlingRequest(endpoint, Method.Get)
-        )).ToArray();
+        var jobs = (await Client.PaginateByOffset<JobItem>(new SmartlingRequest(endpoint, Method.Get)))
+            .DistinctBy(job => job.TranslationJobUid)
+            .ToArray();
 
         if (jobs.Length == 0)
         {

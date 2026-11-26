@@ -35,10 +35,10 @@ public class StringActions(InvocationContext invocationContext) : SmartlingInvoc
 
         do
         {
-            var request =
-                new SmartlingRequest(
-                    $"/strings-api/v2/projects/{projectId}/source-strings?fileUri={fileIdentifier.FileUri}&offset={offset}",
-                    Method.Get);
+            var request = new SmartlingRequest($"/strings-api/v2/projects/{projectId}/source-strings", Method.Get)
+                .AddQueryParameter("fileUri", fileIdentifier.FileUri)
+                .AddQueryParameter("offset", offset);
+            
             response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<SourceStringDto>>>(request);
             strings.AddRange(response.Response.Data.Items);
             offset += limitPerRequest;
@@ -78,10 +78,11 @@ public class StringActions(InvocationContext invocationContext) : SmartlingInvoc
 
         do
         {
-            var request = new SmartlingRequest(
-                $"/strings-api/v2/projects/{projectId}/translations?targetLocaleId={targetLocale.TargetLocaleId}&fileUri={fileIdentifier.FileUri}&offset={offset}",
-                Method.Get
-            );
+            var request = new SmartlingRequest($"/strings-api/v2/projects/{projectId}/translations", Method.Get)
+                .AddQueryParameter("targetLocaleId", targetLocale.TargetLocaleId)
+                .AddQueryParameter("fileUri", fileIdentifier.FileUri)
+                .AddQueryParameter("offset", offset);
+            
             response = await Client.ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<StringTranslationsDto>>>(request);
             stringTranslations.AddRange(response.Response.Data.Items);
             offset += limitPerRequest;

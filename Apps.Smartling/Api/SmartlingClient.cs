@@ -138,4 +138,25 @@ public sealed class SmartlingClient : BlackBirdRestClient
 
         return result;
     }
+    
+    public async Task<List<T>> PaginateByOffset<T>(RestRequest request)
+    {
+        var result = new List<T>();
+        int totalCount;
+
+        do
+        {
+            request.AddOrUpdateParameter(new QueryParameter("offset", result.Count.ToString()));
+            var response = await ExecuteWithErrorHandling<ResponseWrapper<ItemsWrapper<T>>>(request);
+            var items = response.Response.Data.Items?.ToList() ?? [];
+
+            if (items.Count == 0)
+                break;
+
+            result.AddRange(items);
+            totalCount = response.Response.Data.TotalCount ?? 0;
+        } while (result.Count < totalCount);
+
+        return result;
+    }
 }

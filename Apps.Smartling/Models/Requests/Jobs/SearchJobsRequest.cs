@@ -32,7 +32,4 @@ public class SearchJobsRequest
     [Display("Job status")]
     [StaticDataSource(typeof(JobStatusDataSourceHandler))]
     public IEnumerable<string>? TranslationJobStatus { get; set; }
-    
-    [Display("Limit")]
-    public int? Limit { get; set; }
 }
