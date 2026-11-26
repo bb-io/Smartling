@@ -84,6 +84,33 @@ public class JobTests : TestBaseMultipleConnections
     }
 
     [TestMethod, ContextDataSource]
+    public async Task GetJobProgress_ReturnsWorkflowInformation(InvocationContext context)
+    {
+        // Arrange
+        var action = new JobActions(context);
+        var project = new ProjectIdentifier { ProjectId = "fbb208fb6" };
+        var job = new JobIdentifier { TranslationJobUid = "k8vyakkz2drm" };
+        var targetLocale = new TargetLocaleOptionalIdentifier { TargetLocaleId = "es-US" };
+
+        // Act
+        var response = await action.GetJobProgress(project, job, targetLocale);
+
+        // Assert
+        PrintResult(response);
+        var contentProgress = response.ContentProgressReport.Single(x => x.TargetLocaleId == targetLocale.TargetLocaleId);
+        Assert.IsNotNull(contentProgress.WorkflowProgressReportList);
+
+        var workflowProgress = contentProgress.WorkflowProgressReportList.First();
+        Assert.IsFalse(string.IsNullOrWhiteSpace(workflowProgress.WorkflowName));
+        Assert.IsFalse(string.IsNullOrWhiteSpace(workflowProgress.WorkflowUid));
+        Assert.IsNotNull(workflowProgress.WorkflowStepSummaryReport);
+        Assert.IsTrue(workflowProgress.WorkflowStepSummaryReport.All(x =>
+            !string.IsNullOrWhiteSpace(x.WorkflowStepUid) &&
+            !string.IsNullOrWhiteSpace(x.WorkflowStepName) &&
+            !string.IsNullOrWhiteSpace(x.WorkflowStepType)));
+    }
+
+    [TestMethod, ContextDataSource]
     public async Task SearchJobs_ReturnsJobs(InvocationContext context)
     {
         // Arrange
